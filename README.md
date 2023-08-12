@@ -14,7 +14,7 @@ If you already use eww for your widgets, wouldn't it be great if you could use i
 
 ## Example Configuration
 #### eww.yuck
-```
+```lisp
 (defvar end-notifications "")
 (defvar end-appname "")
 (defvar end-appicon "")
