@@ -71,11 +71,11 @@ As such, a general notification widget looks as follows.
  ... your content ...)
 ```
 
-The parameters correspond to the libnotify (notification components)[https://specifications.freedesktop.org/notification-spec/notification-spec-latest.html#basic-design].
+The parameters correspond to the libnotify [notification components](https://specifications.freedesktop.org/notification-spec/notification-spec-latest.html#basic-design).
 
-##### End-Hints 
+##### Remark: End-Hints 
 In the future, I plan to parse the libnotify standard hints (like `image-path`, `category`, etc.) internally and expose the corresponding values
-as eww widget parameters. Until then you will need to parse them manually using eww's expressions.
+individually as eww widget parameters. Until then you will need to parse them from the `end-hints` parameter manually using eww's expressions.
 
 ### Example Configuration
 A complete example configuration could look as follows.
