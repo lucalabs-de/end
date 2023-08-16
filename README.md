@@ -10,7 +10,7 @@ define different widgets for notifications that are selected via libnotify hints
 
 
 ## Getting Started
-### Binary
+### Starting End
 You can either build the project yourself or use one of the prebuilt binaries under Releases. To start the notification daemon, simply run the executable. You'll probably want to put something like
 ```bash
 end &
