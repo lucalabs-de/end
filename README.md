@@ -1,14 +1,13 @@
 # Eww Notification Daemon
 
 There are a few great notification daemons around. Unfortunately, they all use their own configuration language. 
-If you already use eww for your widgets, wouldn't it be great if you could use it for your notifications as well?
+If you already use eww for your widgets, wouldn't it be great if you could justjust  use it for your notifications as well?
 
 ## Features
 
 ## Todo
 - Add configuration file
 - Add different types of notifications that can be chosen via hints (mapping of hints to notification types can be chosen in config file)
-- Add 
 
 ## Getting Started
 
