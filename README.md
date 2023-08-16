@@ -52,8 +52,10 @@ timeout.urgency.critical = 0
 [[notification-type]]
 ### The name of the notification. 
 name = "battery-warning"
+
 ### The name of the eww widget that should be used to display this type of notification.
 eww-key = "battery_widget" 
+
 ### The hint value for the key "end-type" that triggers this type of notification. This 
 ### example notification could, for instance, be triggered by running 
 ### "notify-send --hint=string:end-type:battery 'battery low'".
