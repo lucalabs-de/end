@@ -97,11 +97,16 @@ A complete example configuration could look as follows.
  :wm-ignore true
  (literal :content end-notifications))
 
+ ...
+
 ```
+#### config.toml
+```toml
 ...
+```
 
 ## Todo
-    - Add configuration file
-    - Add different types of notifications that can be chosen via hints (mapping of hints to notification types can be chosen in config file)
-    - Support libnotify standard hints
-    - Finish example configuration
+- Add configuration file
+- Add different types of notifications that can be chosen via hints (mapping of hints to notification types can be chosen in config file)
+- Support libnotify standard hints
+- Finish example configuration
