@@ -12,8 +12,8 @@ import Control.Monad (forever)
 import DBus
 import DBus.Client
 import Data.Int (Int32)
+import Data.Map
 import Data.Word (Word32)
-import Data.Map 
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -49,14 +49,33 @@ notify ::
   IO Word32
 notify appName replaceId appIcon summary body actions hints timeout = do
   putStrLn $ "received notification: " ++ unpack summary
-  callCommand $ setEwwValue "end-appname" appName
-  callCommand $ setEwwValue "end-appicon" appIcon
-  callCommand $ setEwwValue "end-summary" summary
-  callCommand $ setEwwValue "end-body" body
+
+  let notification = buildEwwNotification appName appIcon summary body
+  putStrLn $ setEwwValue "end-notifications" notification
+  callCommand $ setEwwValue "end-notifications" notification
   return 12
 
-setEwwValue :: Text -> Text -> String
-setEwwValue var val = "eww update " ++ unpack var ++ "='" ++ unpack val ++ "'"
+buildEwwNotification :: Text -> Text -> Text -> Text -> String
+buildEwwNotification appName appIcon summary body =
+  "(end-notification :end-appname \""
+    ++ unpack appName
+    ++ "\" :end-appicon \""
+    ++ unpack appIcon
+    ++ "\" :end-summary \""
+    ++ unpack summary
+    ++ "\" :end-body \""
+    ++ unpack body
+    ++ "\")"
+
+setEwwValue :: String -> String -> String
+setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
+
+-- TODO: add state monad to accomplish the following
+-- keep a list of notifications in memory (together with their ids),
+-- remove notifications after timeout,
+-- update the value of the eww variable end-notifications based on currently
+-- displayed notifications,
+-- replace notifications if replaceId is 0
 
 main :: IO ()
 main = do
