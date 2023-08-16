@@ -10,12 +10,14 @@ define different widgets for notifications that are selected via libnotify hints
 
 
 ## Getting Started
+### Binary
 You can either build the project yourself or use one of the prebuilt binaries under Releases. To start the notification daemon, simply run the executable. You'll probably want to put something like
 ```bash
 end &
 ```
 in your `.xinitrc` or similar.
 
+### Eww Configuration
 You need to provide an eww window that End will use to show notifications. End makes use of eww's `literal` widget. Therefore the window is required 
 to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`.
 
