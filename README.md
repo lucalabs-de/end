@@ -48,7 +48,8 @@ timeout.urgency.low = 3
 timeout.urgency.normal = 5
 timeout.urgency.critical = 0
 
-### This allows you to define custom notification types for special purposes. You can define as many as you want.
+### This allows you to define custom notification types for special purposes.
+### You can define as many as you want.
 [[notification-type]]
 ### The name of the notification. 
 name = "battery-warning"
