@@ -7,13 +7,15 @@ import Data.Text
 
 import System.Process
 
-import Control.Concurrent (forkIO, threadDelay)
+import Control.Concurrent (MVar, forkIO, newMVar, threadDelay)
 import Control.Monad (forever)
 import DBus
 import DBus.Client
+import DBus.Internal.Types
 import Data.Int (Int32)
 import Data.Map
 import Data.Word (Word32)
+import State
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -34,10 +36,11 @@ getCapabilites =
     , "action-icons"
     ]
 
-closeNotification :: IO ()
-closeNotification = return ()
+closeNotification :: MVar NotificationState -> IO ()
+closeNotification state = return ()
 
 notify ::
+  MVar NotificationState ->
   Text -> -- application name
   Word32 -> -- replaces id
   Text -> -- app icon
@@ -47,16 +50,23 @@ notify ::
   Map Text Variant -> -- hints
   Int32 -> -- timeout
   IO Word32
-notify appName replaceId appIcon summary body actions hints timeout = do
+notify state appName replaceId appIcon summary body actions hints timeout = do
   putStrLn $ "received notification: " ++ unpack summary
 
-  let notification = buildEwwNotification appName appIcon summary body
+  let hintString = buildHintString hints
+  let notification = buildEwwNotification appName appIcon summary body hintString
   putStrLn $ setEwwValue "end-notifications" notification
   callCommand $ setEwwValue "end-notifications" notification
   return 12
 
-buildEwwNotification :: Text -> Text -> Text -> Text -> String
-buildEwwNotification appName appIcon summary body =
+buildHintString :: Map Text Variant -> String
+buildHintString = Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) ""
+ where
+  showEntry k v = "(" ++ unpack k ++ "," ++ show v ++ ")"
+  show (Variant x) = showValue True x
+
+buildEwwNotification :: Text -> Text -> Text -> Text -> String -> String
+buildEwwNotification appName appIcon summary body hints =
   "(end-notification :end-appname \""
     ++ unpack appName
     ++ "\" :end-appicon \""
@@ -65,6 +75,8 @@ buildEwwNotification appName appIcon summary body =
     ++ unpack summary
     ++ "\" :end-body \""
     ++ unpack body
+    ++ "\" :end-hints \""
+    ++ hints
     ++ "\")"
 
 setEwwValue :: String -> String -> String
@@ -86,6 +98,9 @@ main = do
       "org.freedesktop.Notifications"
       [nameAllowReplacement, nameReplaceExisting]
 
+  notifyState <- newMVar $ NotificationState []
+  let run act = runStateIO act notifyState
+
   export
     client
     "/org/freedesktop/Notifications"
@@ -94,8 +109,8 @@ main = do
       , interfaceMethods =
           [ autoMethod "GetServerInformation" getServerInformation
           , autoMethod "GetCapabilites" getCapabilites
-          , autoMethod "CloseNotification" closeNotification
-          , autoMethod "Notify" notify
+          , autoMethod "CloseNotification" (closeNotification notifyState)
+          , autoMethod "Notify" (notify notifyState)
           ]
       }
 
