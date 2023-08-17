@@ -6,7 +6,7 @@ If you already use eww for your widgets, wouldn't it be great if you could just 
 ## Features
 The Eww Notification Daemon, or End for short, allows you to do exactly that. It leverages eww's `literal` widget to dynamically display 
 libnotify notifications. You define the eww widgets that are used to display a notification and the eww window that they will appear in. You can 
-define different widgets for notifications that are selected via libnotify hints. 
+define multiple widgets for notifications and select them via libnotify hints. 
 
 
 ## Getting Started
