@@ -18,7 +18,7 @@ end &
 in your `.xinitrc` or similar.
 
 ### Eww Configuration
-You need to provide an eww window that End will use to show notifications. End makes use of eww's `literal` widget. Therefore, the window is required 
+You need to provide an eww window that End will use to show notifications. For this to work, the window is required 
 to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`.
 The name of the variable is configurable.
 
