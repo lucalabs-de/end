@@ -2,20 +2,24 @@
 
 module Main where
 
+import Prelude hiding (id)
+
 import Data.List (sort)
-import Data.Text
+import Data.Text hiding (foldr)
 
 import System.Process
 
-import Control.Concurrent (MVar, forkIO, newMVar, threadDelay)
+import Control.Concurrent (MVar, forkIO, newMVar, readMVar, threadDelay)
 import Control.Monad (forever)
 import DBus
 import DBus.Client
 import DBus.Internal.Types
 import Data.Int (Int32)
-import Data.Map
+import Data.Map hiding (foldr)
 import Data.Word (Word32)
 import State
+import Util.Builders
+import Data.Sequence (Seq(Empty))
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -50,37 +54,31 @@ notify ::
   Map Text Variant -> -- hints
   Int32 -> -- timeout
   IO Word32
-notify state appName replaceId appIcon summary body actions hints timeout = do
-  putStrLn $ "received notification: " ++ unpack summary
+notify state appName replaceId appIcon summary body actions hints _ = do
+  notificationState <- readMVar state
 
   let hintString = buildHintString hints
-  let notification = buildEwwNotification appName appIcon summary body hintString
-  putStrLn $ setEwwValue "end-notifications" notification
-  callCommand $ setEwwValue "end-notifications" notification
-  return 12
+  let notification =
+        Notification
+          { nId = 1 + getLastId (notifications notificationState)
+          , timeout = -1
+          , notifyType = Nothing -- TODO parse from hints
+          , appName = appName
+          , appIcon = appIcon
+          , summary = summary
+          , body = body
+          , hintString = hintString
+          }
 
-buildHintString :: Map Text Variant -> String
-buildHintString = Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) ""
- where
-  showEntry k v = "(" ++ unpack k ++ "," ++ show v ++ ")"
-  show (Variant x) = showValue True x
+  let notifications' = notification : notifications notificationState
 
-buildEwwNotification :: Text -> Text -> Text -> Text -> String -> String
-buildEwwNotification appName appIcon summary body hints =
-  "(end-notification :end-appname \""
-    ++ unpack appName
-    ++ "\" :end-appicon \""
-    ++ unpack appIcon
-    ++ "\" :end-summary \""
-    ++ unpack summary
-    ++ "\" :end-body \""
-    ++ unpack body
-    ++ "\" :end-hints \""
-    ++ hints
-    ++ "\")"
+  let widgetString = buildWidgetString (notifications notificationState)
 
-setEwwValue :: String -> String -> String
-setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
+  callCommand $ setEwwValue "end-notifications" widgetString
+  return $ nId notification
+
+getLastId :: [Notification] -> Word32
+getLastId = foldr (\n c -> max c (nId n)) 0
 
 -- TODO: add state monad to accomplish the following
 -- keep a list of notifications in memory (together with their ids),
@@ -99,7 +97,6 @@ main = do
       [nameAllowReplacement, nameReplaceExisting]
 
   notifyState <- newMVar $ NotificationState []
-  let run act = runStateIO act notifyState
 
   export
     client
