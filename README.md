@@ -80,7 +80,7 @@ The parameters correspond to the libnotify [notification components](https://spe
 In the future, I plan to parse the libnotify standard hints (like `image-path`, `category`, etc.) internally and expose the corresponding values
 individually as eww widget parameters. Until then you will need to parse them from the `end-hints` parameter manually using eww's expressions.
 
-### Example Configuration
+### Example Configuration (WIP)
 A complete example configuration could look as follows.
 
 #### eww.yuck
@@ -109,7 +109,5 @@ A complete example configuration could look as follows.
 ```
 
 ## Todo
-- Add configuration file
-- Add different types of notifications that can be chosen via hints (mapping of hints to notification types can be chosen in config file)
 - Support libnotify standard hints
 - Finish example configuration
