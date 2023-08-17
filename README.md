@@ -69,7 +69,7 @@ As such, a general notification widget looks as follows.
 
 ```lisp
 (defwidget end-notification 
- [end-appname end-appicon end-summary end-body]
+ [end-appname end-appicon end-summary end-body end-hints]
  ... your content ...)
 ```
 
