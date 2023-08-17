@@ -31,7 +31,7 @@ End checks `$XDG_CONFIG_HOME/end` for a `config.toml`, which is structured as fo
 eww-content-key = "end-notifications"
 
 ### Name of the widget used for general notifications. If this is not supplied, End will 
-### fall back to a default widget.
+### fall back to a default widget (which is really ugly, so you'll want to set this ^^).
 eww-default-notification-key = ""
 
 ### The maximal number of notifications that are shown at a time. When the current number of 
