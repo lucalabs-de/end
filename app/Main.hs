@@ -19,7 +19,6 @@ import Data.Map hiding (foldr)
 import Data.Word (Word32)
 import State
 import Util.Builders
-import Data.Sequence (Seq(Empty))
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =

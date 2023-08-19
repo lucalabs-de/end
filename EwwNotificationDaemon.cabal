@@ -17,16 +17,18 @@ executable EwwNotificationDaemon
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: State, Config, Util.Builders
+    other-modules: State, Config, XWindow, Util.Builders, Util.Helpers
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    
       base ^>=4.16.4.0,
       dbus ^>=1.2.29,
+      X11 ^>=1.10.3,
       text ^>=1.2.5.0,
       process ^>=1.6.17.0,
       mtl ^>=2.2.2,
-      containers ^>=0.6.5.1 
+      containers ^>=0.6.5.1,
+      extensible-exceptions
     hs-source-dirs:   app
     default-language: Haskell2010
