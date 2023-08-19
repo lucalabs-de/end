@@ -6,7 +6,7 @@ If you already use eww for your widgets, wouldn't it be great if you could just 
 ## Features
 The Eww Notification Daemon, or End for short, allows you to do exactly that. It leverages eww's `literal` widget to dynamically display 
 libnotify notifications. You define the eww widgets that are used to display a notification and the eww window that they will appear in. You can 
-define different widgets for notifications that are selected via libnotify hints. 
+define multiple widgets for your notifications and select between them via libnotify hints. 
 
 
 ## Getting Started
@@ -18,7 +18,7 @@ end &
 in your `.xinitrc` or similar.
 
 ### Eww Configuration
-You need to provide an eww window that End will use to show notifications. End makes use of eww's `literal` widget. Therefore, the window is required 
+You need to provide an eww window that End will use to show notifications. For this to work, the window is required 
 to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`.
 The name of the variable is configurable.
 
@@ -31,7 +31,7 @@ End checks `$XDG_CONFIG_HOME/end` for a `config.toml`, which is structured as fo
 eww-content-key = "end-notifications"
 
 ### Name of the widget used for general notifications. If this is not supplied, End will 
-### fall back to a default widget.
+### fall back to a default widget (which is really ugly, so you'll want to set this ^^).
 eww-default-notification-key = ""
 
 ### The maximal number of notifications that are shown at a time. When the current number of 
@@ -48,7 +48,8 @@ timeout.urgency.low = 3
 timeout.urgency.normal = 5
 timeout.urgency.critical = 0
 
-### This allows you to define custom notification types for special purposes. 
+### This allows you to define custom notification types for special purposes.
+### You can define as many as you want.
 [[notification-type]]
 ### The name of the notification. 
 name = "battery-warning"
@@ -79,7 +80,7 @@ The parameters correspond to the libnotify [notification components](https://spe
 In the future, I plan to parse the libnotify standard hints (like `image-path`, `category`, etc.) internally and expose the corresponding values
 individually as eww widget parameters. Until then you will need to parse them from the `end-hints` parameter manually using eww's expressions.
 
-### Example Configuration
+### Example Configuration (WIP)
 A complete example configuration could look as follows.
 
 #### eww.yuck
@@ -108,7 +109,5 @@ A complete example configuration could look as follows.
 ```
 
 ## Todo
-- Add configuration file
-- Add different types of notifications that can be chosen via hints (mapping of hints to notification types can be chosen in config file)
 - Support libnotify standard hints
 - Finish example configuration
