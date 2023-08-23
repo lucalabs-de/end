@@ -41,9 +41,7 @@ eww-default-notification-key = ""
 ### A value of 0 means that notifications will never get dropped.
 max-notifications = 0
 
-### Defines the timeouts for different types of notifications in seconds. The default timeout
-### is used when the notification contains no urgency information.
-timeout.default = 5
+### Defines the timeouts for different types of notifications in seconds. 
 timeout.urgency.low = 3 
 timeout.urgency.normal = 5
 timeout.urgency.critical = 0
