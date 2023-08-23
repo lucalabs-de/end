@@ -9,8 +9,8 @@ setEwwValue :: String -> String -> String
 setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
 
 buildWidgetWrapper :: Bool -> String -> String
-buildWidgetWrapper True widgets = "(box :orientation 'horizonal'" ++ widgets ++ ")"
-buildWidgetWrapper False widgets = "(box :orientation 'vertical'" ++ widgets ++ ")"
+buildWidgetWrapper True widgets = "(box :orientation \"vertical\" " ++ widgets ++ ")"
+buildWidgetWrapper False widgets = "(box :orientation \"horizontal\" " ++ widgets ++ ")"
 
 buildWidgetString :: [Notification] -> String
 buildWidgetString =
