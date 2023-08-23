@@ -19,6 +19,7 @@ import Data.Map hiding (foldr)
 import Data.Word (Word32)
 import State
 import Util.Builders
+import Util.DbusNotify (getStringHint, hintKeyNotifyType)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -61,7 +62,7 @@ notify state appName replaceId appIcon summary body actions hints _ = do
         Notification
           { nId = 1 + getLastId (notifications notificationState)
           , timeout = -1
-          , notifyType = Nothing -- TODO parse from hints
+          , notifyType = getStringHint hints hintKeyNotifyType
           , appName = appName
           , appIcon = appIcon
           , summary = summary
