@@ -9,7 +9,7 @@ import Data.Text hiding (foldr)
 
 import System.Process
 
-import Control.Concurrent (MVar, forkIO, newMVar, readMVar, threadDelay)
+import Control.Concurrent (MVar, forkIO, newMVar, readMVar, threadDelay, putMVar, modifyMVar_, swapMVar)
 import Control.Monad (forever)
 import DBus
 import DBus.Client
@@ -70,8 +70,11 @@ notify state appName replaceId appIcon summary body actions hints _ = do
           }
 
   let notifications' = notification : notifications notificationState
+  let widgetString = buildWidgetWrapper True $ buildWidgetString notifications'
 
-  let widgetString = buildWidgetString (notifications notificationState)
+  swapMVar state (NotificationState notifications')
+
+  putStrLn widgetString
 
   callCommand $ setEwwValue "end-notifications" widgetString
   return $ nId notification

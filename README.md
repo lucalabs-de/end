@@ -19,7 +19,7 @@ in your `.xinitrc` or similar.
 
 ### Eww Configuration
 You need to provide an eww window that End will use to show notifications. For this to work, the window is required 
-to contain the widget `(box (literal :content end-notifications))`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`.
+to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`.
 The box can be styled to your liking, and the name of the variable is configurable.
 
 ## Configuration
@@ -98,7 +98,7 @@ A complete example configuration could look as follows.
  :stacking "fg"
  :windowtype "desktop"
  :wm-ignore true
- (box (literal :content end-notifications)))
+ (literal :content end-notifications))
 
  ...
 

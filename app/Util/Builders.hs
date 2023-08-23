@@ -8,6 +8,10 @@ import State
 setEwwValue :: String -> String -> String
 setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
 
+buildWidgetWrapper :: Bool -> String -> String
+buildWidgetWrapper True widgets = "(box :orientation 'horizonal'" ++ widgets ++ ")"
+buildWidgetWrapper False widgets = "(box :orientation 'vertical'" ++ widgets ++ ")"
+
 buildWidgetString :: [Notification] -> String
 buildWidgetString =
   foldr
