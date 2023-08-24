@@ -9,7 +9,8 @@ import Data.Text hiding (foldr)
 
 import System.Process
 
-import Control.Concurrent (MVar, forkIO, newMVar, readMVar, threadDelay, putMVar, modifyMVar_, swapMVar)
+import Control.Concurrent (MVar, forkIO, modifyMVar_, newMVar, putMVar, readMVar, swapMVar, threadDelay)
+import Control.Concurrent.AtomicModify
 import Control.Monad (forever)
 import DBus
 import DBus.Client
@@ -20,6 +21,7 @@ import Data.Word (Word32)
 import State
 import Util.Builders
 import Util.DbusNotify (getStringHint, hintKeyNotifyType)
+import Util.Helpers (getMax, tuple)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -40,6 +42,12 @@ getCapabilites =
     , "action-icons"
     ]
 
+removeAfterTimeout :: MVar NotificationState -> Word32 -> Int -> IO ()
+removeAfterTimeout state id timeout = do
+  threadDelay (timeout * 1000 * 1000)
+  l <- atomicModifyStrict state (tuple . NotificationState . Prelude.filter (\n -> nId n /= id) . notifications)
+  displayNotifications $ notifications l
+
 closeNotification :: MVar NotificationState -> IO ()
 closeNotification state = return ()
 
@@ -58,31 +66,38 @@ notify state appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
 
   let hintString = buildHintString hints
+  let getLastId = getMax nId 0
+
   let notification =
         Notification
           { nId = 1 + getLastId (notifications notificationState)
-          , timeout = -1
+          , timeout = 10 -- TODO read this from config depending on urgency
           , notifyType = getStringHint hints hintKeyNotifyType
           , appName = appName
           , appIcon = appIcon
           , summary = summary
           , body = body
           , hintString = hintString
+          , widget = Nothing
           }
 
   let notifications' = notification : notifications notificationState
-  let widgetString = buildWidgetWrapper True $ buildWidgetString notifications'
-
   swapMVar state (NotificationState notifications')
 
-  putStrLn widgetString
+  forkIO $ removeAfterTimeout state (nId notification) (timeout notification)
+  displayNotifications notifications'
 
-  callCommand $ setEwwValue "end-notifications" widgetString
   return $ nId notification
 
-getLastId :: [Notification] -> Word32
-getLastId = foldr (\n c -> max c (nId n)) 0
+displayNotifications :: [Notification] -> IO ()
+displayNotifications l = do
+  let widgetString = buildWidgetWrapper True $ buildWidgetString l
+  putStrLn widgetString
+  callCommand $ setEwwValue "end-notifications" widgetString
 
+launchEwwWindow :: String -> IO ()
+launchEwwWindow = callCommand . buildWindowCommand
+  
 -- TODO: add state monad to accomplish the following
 -- keep a list of notifications in memory (together with their ids),
 -- remove notifications after timeout,
@@ -92,6 +107,8 @@ getLastId = foldr (\n c -> max c (nId n)) 0
 
 main :: IO ()
 main = do
+  launchEwwWindow "notification-frame"
+  
   client <- connectSession
   _ <-
     requestName
