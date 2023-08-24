@@ -61,6 +61,10 @@ eww-key = "battery_widget"
 ### "notify-send --hint=string:end-type:battery 'battery low'".
 hint = "battery"
 
+### Specifies a custom timeout that overrides the urgency-based value. Again, a value of 0
+### means that the notification will not time out.
+timeout = 0
+
 ```
 ### Custom Notification Widgets
 We've seen that you can define your own notification widgets. 
