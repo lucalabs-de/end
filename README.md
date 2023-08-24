@@ -64,12 +64,12 @@ hint = "battery"
 ```
 ### Custom Notification Widgets
 We've seen that you can define your own notification widgets. 
-The notification data is supplied to the widget via the parameters `end-appname` `end-appicon` `end-summary` `end-body` and `end-hints`.
+The notification data is supplied to the widget via the parameters `end-id` `end-appname` `end-appicon` `end-summary` `end-body` and `end-hints`.
 As such, a general notification widget looks as follows.
 
-```lisp
+```yuck
 (defwidget end-notification 
- [end-appname end-appicon end-summary end-body end-hints]
+ [end-id end-appname end-appicon end-summary end-body end-hints]
  ... your content ...)
 ```
 
@@ -83,7 +83,7 @@ individually as eww widget parameters. Until then you will need to parse them fr
 A complete example configuration could look as follows.
 
 #### eww.yuck
-```lisp
+```yuck
 (defvar end-notifications "")
 
 (defwindow notification_frame
