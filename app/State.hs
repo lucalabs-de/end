@@ -20,3 +20,5 @@ data Notification = Notification
 
 newtype NotificationState = NotificationState
   {notifications :: [Notification]}
+
+type NState = MVar NotificationState

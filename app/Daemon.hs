@@ -17,17 +17,16 @@ import DBus.Client hiding (listen)
 import DBus.Internal.Types
 import Data.Int (Int32)
 import Data.Map hiding (foldr)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Word (Word32)
--- import GHC.IO.Handle (BufferMode (NoBuffering), hSetBuffering)
--- import GHC.IO.IOMode (IOMode (ReadMode))
-import System.IO
 import Network.Socket
+import Network.Socket.ByteString (recv)
 import State
+import System.IO
 import Util.Builders
 import Util.Constants (ipcSocketAddr)
 import Util.DbusNotify (getStringHint, hintKeyNotifyType)
 import Util.Helpers (getMax, tuple)
-import Data.Maybe (listToMaybe, fromMaybe)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -56,7 +55,7 @@ removeAfterTimeout state id timeout = do
 
 closeNotification :: MVar NotificationState -> Word32 -> IO ()
 closeNotification state id = do
-  undefined 
+  undefined
 
 notify ::
   MVar NotificationState ->
@@ -112,32 +111,25 @@ launchEwwWindow = callCommand . buildWindowCommand
 -- displayed notifications,
 -- replace notifications if replaceId is 0
 
-setupIpcSocket :: IO ()
-setupIpcSocket = do
+setupIpcSocket :: NState -> IO ()
+setupIpcSocket state = do
   sock <- socket AF_UNIX Stream 0
   setSocketOption sock ReuseAddr 1
   bind sock ipcSocketAddr
   listen sock 2
 
-  socketLoop sock
+  socketLoop state sock
 
-socketLoop :: Socket -> IO ()
-socketLoop sock = do
-  conn <- accept sock
-  hdl <- socketToHandle sock ReadMode
-  hSetBuffering hdl NoBuffering
+socketLoop :: NState -> Socket -> IO ()
+socketLoop state sock = forever $ do
+  (client, _) <- accept sock
+  msg <- recv client 1024
+  print msg
 
-  command <- fmap Prelude.init (hGetLine hdl)
-  putStrLn command
-  
-  hClose hdl
-
-  socketLoop sock
 
 evalCommand :: String -> [String] -> IO a
-evalCommand "close" params = do 
+evalCommand "close" params = do
   undefined
-
 
 main :: IO ()
 main = do
@@ -165,6 +157,6 @@ main = do
           ]
       }
 
-  forkIO setupIpcSocket
+  forkIO $ setupIpcSocket notifyState
 
   forever $ threadDelay (maxBound - 1)

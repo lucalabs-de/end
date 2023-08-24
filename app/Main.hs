@@ -12,7 +12,7 @@ sendCommand :: [String] -> IO ()
 sendCommand args = do
   sock <- socket AF_UNIX Stream 0
   connect sock ipcSocketAddr
-  send sock $ (pack . intercalate "") args
+  send sock $ (pack . unwords) args
   close sock
 
 main :: IO ()
