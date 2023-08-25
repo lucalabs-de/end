@@ -151,3 +151,4 @@ A complete example configuration could look as follows.
 ## Todo
 - Support libnotify standard hints
 - Finish example configuration
+- Add screenshots to README
