@@ -22,7 +22,9 @@ cd end
 cabal build
 ```
 You will find the executable under 
-```dist-newstyle/build/x86_64-linux/ghc-<GHC version>/EwwNotificationDaemon-<End version>/x/end/build/end```
+```
+dist-newstyle/build/x86_64-linux/ghc-<GHC version>/EwwNotificationDaemon-<End version>/x/end/build/end
+```
 To start the notification daemon, simply run the executable. You'll probably want to put something like
 ```bash
 end &
