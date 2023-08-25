@@ -1,12 +1,18 @@
 module Main where
 
 import qualified Daemon
+import Util.Constants
+
 import Data.ByteString.Char8 (pack)
-import Data.List (intercalate)
-import Network.Socket
-import Network.Socket.ByteString
+import Network.Socket (
+  Family (AF_UNIX),
+  SocketType (Stream),
+  close,
+  connect,
+  socket,
+ )
+import Network.Socket.ByteString (send)
 import System.Environment (getArgs)
-import Util.Constants (ipcSocketAddr)
 
 sendCommand :: [String] -> IO ()
 sendCommand args = do

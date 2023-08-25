@@ -2,35 +2,52 @@
 
 module Daemon (main) where
 
-import Prelude hiding (id)
-
-import Data.List (sort)
-
-import System.Process
-
-import Control.Concurrent
-import Control.Concurrent.AtomicModify
+import Control.Concurrent (
+  forkIO,
+  newMVar,
+  readMVar,
+  swapMVar,
+  threadDelay,
+ )
+import Control.Concurrent.AtomicModify (atomicModifyStrict)
 import Control.Monad (forever)
-import DBus
-import DBus.Client hiding (listen)
-import DBus.Internal.Types
-import Data.ByteString (split)
-import Data.ByteString.Char8 (unpack)
+import DBus (Variant)
+import DBus.Client (
+  Interface (interfaceName),
+  autoMethod,
+  connectSession,
+  defaultInterface,
+  export,
+  interfaceMethods,
+  nameAllowReplacement,
+  nameReplaceExisting,
+  requestName,
+ )
+import Data.ByteString.Char8 (split, unpack)
+import Data.Char (ord)
 import Data.Int (Int32)
-import Data.Map hiding (foldr, split)
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Map (Map)
 import Data.Text (Text)
 import Data.Word (Word32)
-import Network.Socket
+import Network.Socket (
+  Family (AF_UNIX),
+  Socket,
+  SocketOption (ReuseAddr),
+  SocketType (Stream),
+  accept,
+  bind,
+  listen,
+  setSocketOption,
+  socket,
+ )
 import Network.Socket.ByteString (recv)
 import State
-import System.IO
+import System.Process (callCommand)
+
 import Util.Builders
-import Util.Constants (ipcSocketAddr)
-import Util.DbusNotify (getStringHint, hintKeyNotifyType)
-import Util.Helpers (getMax, tuple)
-import Data.Char (ord)
-import System.Exit (exitSuccess)
+import Util.Constants
+import Util.DbusNotify
+import Util.Helpers
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -62,7 +79,7 @@ closeNotification state id = do
   displayNotifications $ notifications l
 
 notify ::
-  MVar NotificationState ->
+  NState ->
   Text -> -- application name
   Word32 -> -- replaces id
   Text -> -- app icon
@@ -121,10 +138,10 @@ socketLoop :: NState -> Socket -> IO ()
 socketLoop state sock = forever $ do
   (client, _) <- accept sock
   msg <- recv client 1024
-  let command : args = unpack <$> split (fromIntegral (ord ' ')) msg 
-  evalCommand state command args 
+  let command : args = unpack <$> split (fromIntegral (ord ' ')) msg
+  evalCommand state command args
 
-evalCommand :: NState -> String -> [String] -> IO () 
+evalCommand :: NState -> String -> [String] -> IO ()
 evalCommand state "close" params = closeNotification state $ read (head params)
 evalCommand state "kill" params = undefined -- TODO clean up properly
 
