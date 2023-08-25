@@ -10,7 +10,7 @@ import Control.Concurrent (
   threadDelay,
  )
 import Control.Concurrent.AtomicModify (atomicModifyStrict)
-import Control.Monad (forever)
+import Control.Monad (forever, void, when)
 import DBus (Variant)
 import DBus.Client (
   Interface (interfaceName),
@@ -97,7 +97,7 @@ notify state appName replaceId appIcon summary body actions hints _ = do
   let notification =
         Notification
           { nId = 1 + getLastId (notifications notificationState)
-          , timeout = 10 -- TODO read this from config depending on urgency
+          , timeout = 0 -- TODO read this from config depending on urgency
           , notifyType = getStringHint hints hintKeyNotifyType
           , appName = appName
           , appIcon = appIcon
@@ -110,9 +110,11 @@ notify state appName replaceId appIcon summary body actions hints _ = do
   let notifications' = notification : notifications notificationState
   swapMVar state (NotificationState notifications')
 
-  forkIO $ removeAfterTimeout state (nId notification) (timeout notification)
-  displayNotifications notifications'
+  when (timeout notification /= 0) $
+    void . forkIO $
+      removeAfterTimeout state (nId notification) (timeout notification)
 
+  displayNotifications notifications'
   return $ nId notification
 
 displayNotifications :: [Notification] -> IO ()
