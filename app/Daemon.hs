@@ -24,7 +24,6 @@ import DBus.Client (
   requestName,
  )
 import Data.ByteString.Char8 (split, unpack)
-import Data.Char (ord)
 import Data.Int (Int32)
 import Data.Map (Map)
 import Data.Text (Text)
@@ -75,7 +74,7 @@ removeAfterTimeout state id timeout = do
 
 closeNotification :: NState -> Word32 -> IO ()
 closeNotification state id = do
-  l <- atomicModifyStrict state (tuple . NotificationState . Prelude.filter (\n -> nId n /= id) . notifications)
+  l <- atomicModifyStrict state (tuple . NotificationState . filter (\n -> nId n /= id) . notifications)
   displayNotifications $ notifications l
 
 notify ::
@@ -138,7 +137,7 @@ socketLoop :: NState -> Socket -> IO ()
 socketLoop state sock = forever $ do
   (client, _) <- accept sock
   msg <- recv client 1024
-  let command : args = unpack <$> split (fromIntegral (ord ' ')) msg
+  let command : args = unpack <$> split ' ' msg
   evalCommand state command args
 
 evalCommand :: NState -> String -> [String] -> IO ()
