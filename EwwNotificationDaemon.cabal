@@ -25,7 +25,9 @@ executable end
       Util.Builders,
       Util.Helpers,
       Util.DbusNotify,
-      Util.Constants
+      Util.Constants,
+      Util.CliParsers,
+      Paths_EwwNotificationDaemon
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -40,6 +42,7 @@ executable end
       extensible-exceptions,
       bytestring,
       atomic-modify ^>=0.1.0.3,
-      network ^>=3.1.2.8
+      network ^>=3.1.2.8,
+      optparse-applicative ^>=0.18.1.0
     hs-source-dirs:   app
     default-language: Haskell2010
