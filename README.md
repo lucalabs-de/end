@@ -12,7 +12,7 @@ define multiple widgets for your notifications and select between them via libno
 ## Getting Started
 You can either build the project yourself or use one of the prebuilt binaries under Releases. 
 
-### Building from Source
+#### Building from Source
 This project is written in Haskell. You can use [GHCup](https://www.haskell.org/ghcup/) to install the required tools.
 To build End, run the following commands.
 
@@ -33,11 +33,11 @@ in your WM's init file.
 
 ## Usage
 
-### Eww Configuration
+#### Eww Configuration
 You need to provide an eww window that End will use to show notifications. For this to work, the window is required 
 to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`. The name of the variable is configurable.
 
-### Commands
+#### Commands
 The following commands are supported.
 
 ```bash
