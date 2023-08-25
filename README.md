@@ -10,20 +10,51 @@ define multiple widgets for your notifications and select between them via libno
 
 
 ## Getting Started
-### Starting End
-You can either build the project yourself or use one of the prebuilt binaries under Releases. To start the notification daemon, simply run the executable. You'll probably want to put something like
+You can either build the project yourself or use one of the prebuilt binaries under Releases. 
+
+### Building from Source
+This project is written in Haskell. You can use [GHCup](https://www.haskell.org/ghcup/) to install the required tools.
+To build End, run the following commands.
+
+```bash
+git clone https://github.com/lucalabs-de/end
+cd end
+cabal build
+```
+You can find the executable under `dist-newstyle/build/x86_64-linux/ghc-<GHC version>/EwwNotificationDaemon-<End version>/x/end/build/end`.
+
+To start the notification daemon, simply run the executable. You'll probably want to put something like
 ```bash
 end &
 ```
-in your `.xinitrc` or similar.
+in your WM's init file. 
+
+## Usage
 
 ### Eww Configuration
 You need to provide an eww window that End will use to show notifications. For this to work, the window is required 
-to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`.
-The box can be styled to your liking, and the name of the variable is configurable.
+to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`. The name of the variable is configurable.
+
+### Commands
+The following commands are supported.
+
+```bash
+end
+```
+Starts the notification daemon.
+
+```bash
+end stop
+```
+Stops the notification daemon.
+
+```bash
+end close <id>
+```
+Closes the notification with the given ID. Useful for notifications that don't time out.
 
 ## Configuration
-End checks `$XDG_CONFIG_HOME/end` for a `config.toml`, which is structured as follows.
+End checks `$XDG_CONFIG_HOME/end` (most likely `~/.config`) for a `config.toml`, which is structured as follows.
 
 ```toml
 [config]
@@ -40,6 +71,10 @@ eww-default-notification-key = ""
 ###
 ### A value of 0 means that notifications will never get dropped.
 max-notifications = 0
+
+### Defines whether multiple notifications should be displayed above each other (v) or
+### next to each other (h).
+notification-orientation = "v"
 
 ### Defines the timeouts for different types of notifications in seconds. A value 
 ### of 0 means that the notification will never timeout
