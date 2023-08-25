@@ -23,7 +23,7 @@ writeIpcSocket args =
     ( do
         sock <- socket AF_UNIX Stream 0
         connect sock ipcSocketAddr
-        -- send sock $ (pack . unwords) args
+        send sock $ (pack . unwords) args
         close sock
     )
     (putStrLn "daemon is not running, run end first!")
