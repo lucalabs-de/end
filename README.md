@@ -103,7 +103,7 @@ hint = "battery"
 timeout = 0
 
 ```
-### Custom Notification Widgets
+#### Custom Notification Widgets
 We've seen that you can define your own notification widgets. 
 The notification data is supplied to the widget via the parameters `end-id` `end-appname` `end-appicon` `end-summary` `end-body` and `end-hints`.
 As such, a general notification widget looks as follows.
@@ -116,14 +116,14 @@ As such, a general notification widget looks as follows.
 
 The parameters correspond to the libnotify [notification components](https://specifications.freedesktop.org/notification-spec/notification-spec-latest.html#basic-design).
 
-#### Remark: End-Hints 
+**Remark: End-Hints**
 In the future, I plan to parse the libnotify standard hints (like `image-path`, `category`, etc.) internally and expose the corresponding values
 individually as eww widget parameters. Until then you will need to parse them from the `end-hints` parameter manually using eww's expressions.
 
-### Example Configuration (WIP)
+#### Example Configuration (WIP)
 A complete example configuration could look as follows.
 
-#### eww.yuck
+##### eww.yuck
 ```yuck
 (defvar end-notifications "")
 
@@ -143,7 +143,7 @@ A complete example configuration could look as follows.
  ...
 
 ```
-#### config.toml
+##### config.toml
 ```toml
 ...
 ```
