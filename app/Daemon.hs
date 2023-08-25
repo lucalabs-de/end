@@ -5,7 +5,6 @@ module Daemon (main) where
 import Prelude hiding (id)
 
 import Data.List (sort)
-import Data.Text hiding (foldr)
 
 import System.Process
 
@@ -15,9 +14,12 @@ import Control.Monad (forever)
 import DBus
 import DBus.Client hiding (listen)
 import DBus.Internal.Types
+import Data.ByteString (split)
+import Data.ByteString.Char8 (unpack)
 import Data.Int (Int32)
-import Data.Map hiding (foldr)
+import Data.Map hiding (foldr, split)
 import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Text (Text)
 import Data.Word (Word32)
 import Network.Socket
 import Network.Socket.ByteString (recv)
@@ -27,6 +29,8 @@ import Util.Builders
 import Util.Constants (ipcSocketAddr)
 import Util.DbusNotify (getStringHint, hintKeyNotifyType)
 import Util.Helpers (getMax, tuple)
+import Data.Char (ord)
+import System.Exit (exitSuccess)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -47,15 +51,15 @@ getCapabilites =
     , "action-icons"
     ]
 
-removeAfterTimeout :: MVar NotificationState -> Word32 -> Int -> IO ()
+removeAfterTimeout :: NState -> Word32 -> Int -> IO ()
 removeAfterTimeout state id timeout = do
   threadDelay (timeout * 1000 * 1000)
+  closeNotification state id
+
+closeNotification :: NState -> Word32 -> IO ()
+closeNotification state id = do
   l <- atomicModifyStrict state (tuple . NotificationState . Prelude.filter (\n -> nId n /= id) . notifications)
   displayNotifications $ notifications l
-
-closeNotification :: MVar NotificationState -> Word32 -> IO ()
-closeNotification state id = do
-  undefined
 
 notify ::
   MVar NotificationState ->
@@ -104,13 +108,6 @@ displayNotifications l = do
 launchEwwWindow :: String -> IO ()
 launchEwwWindow = callCommand . buildWindowCommand
 
--- TODO: add state monad to accomplish the following
--- keep a list of notifications in memory (together with their ids),
--- remove notifications after timeout,
--- update the value of the eww variable end-notifications based on currently
--- displayed notifications,
--- replace notifications if replaceId is 0
-
 setupIpcSocket :: NState -> IO ()
 setupIpcSocket state = do
   sock <- socket AF_UNIX Stream 0
@@ -124,12 +121,12 @@ socketLoop :: NState -> Socket -> IO ()
 socketLoop state sock = forever $ do
   (client, _) <- accept sock
   msg <- recv client 1024
-  print msg
+  let command : args = unpack <$> split (fromIntegral (ord ' ')) msg 
+  evalCommand state command args 
 
-
-evalCommand :: String -> [String] -> IO a
-evalCommand "close" params = do
-  undefined
+evalCommand :: NState -> String -> [String] -> IO () 
+evalCommand state "close" params = closeNotification state $ read (head params)
+evalCommand state "kill" params = undefined -- TODO clean up properly
 
 main :: IO ()
 main = do
