@@ -47,6 +47,10 @@ import Util.Builders
 import Util.Constants
 import Util.DbusNotify
 import Util.Helpers
+import Config (importConfig)
+import Control.Exception (onException)
+import Data.Maybe (fromJust)
+import System.Directory.Internal.Prelude (exitFailure)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -148,6 +152,9 @@ evalCommand state "kill" params = undefined -- TODO clean up properly
 
 main :: IO ()
 main = do
+  config <- onException (fromJust <$> importConfig) exitFailure 
+  print config
+
   launchEwwWindow "notification-frame"
 
   client <- connectSession

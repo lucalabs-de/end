@@ -80,8 +80,8 @@ notification-orientation = "v"
 
 ### Defines the timeouts for different types of notifications in seconds. A value 
 ### of 0 means that the notification will never timeout
-timeout.urgency.low = 3 
-timeout.urgency.normal = 5
+timeout.urgency.low = 5
+timeout.urgency.normal = 10
 timeout.urgency.critical = 0
 
 ### This allows you to define custom notification types for special purposes.
