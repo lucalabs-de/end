@@ -4,9 +4,12 @@ module Daemon (main) where
 
 import Control.Concurrent (
   forkIO,
+  newEmptyMVar,
   newMVar,
+  putMVar,
   readMVar,
   swapMVar,
+  takeMVar,
   threadDelay,
  )
 import Control.Concurrent.AtomicModify (atomicModifyStrict)
@@ -43,14 +46,15 @@ import Network.Socket.ByteString (recv)
 import State
 import System.Process (callCommand)
 
-import Util.Builders
-import Util.Constants
-import Util.DbusNotify
-import Util.Helpers
 import Config (importConfig)
 import Control.Exception (onException)
 import Data.Maybe (fromJust, isJust)
 import System.Directory.Internal.Prelude (exitFailure)
+import Toml (Value (Bool))
+import Util.Builders
+import Util.Constants
+import Util.DbusNotify
+import Util.Helpers
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -128,34 +132,30 @@ displayNotifications l = do
   putStrLn widgetString
   callCommand $ setEwwValue "end-notifications" widgetString
 
-launchEwwWindow :: String -> IO ()
-launchEwwWindow = callCommand . buildWindowCommand
-
-setupIpcSocket :: NState -> IO ()
-setupIpcSocket state = do
+setupIpcSocket :: NState -> Barrier -> IO ()
+setupIpcSocket state term = do
   sock <- socket AF_UNIX Stream 0
   setSocketOption sock ReuseAddr 1
   bind sock ipcSocketAddr
   listen sock 2
 
-  socketLoop state sock
+  socketLoop state sock term
 
-socketLoop :: NState -> Socket -> IO ()
-socketLoop state sock = forever $ do
+socketLoop :: NState -> Socket -> Barrier -> IO ()
+socketLoop state sock barrier = forever $ do
   (client, _) <- accept sock
   msg <- recv client 1024
   let command : args = unpack <$> split ' ' msg
-  evalCommand state command args
+  evalCommand state barrier command args
 
-evalCommand :: NState -> String -> [String] -> IO ()
-evalCommand state "close" params = closeNotification state $ read (head params)
-evalCommand state "kill" params = undefined -- TODO clean up properly
+evalCommand :: NState -> Barrier -> String -> [String] -> IO ()
+evalCommand state _ "close" params = closeNotification state $ read (head params)
+evalCommand state barrier "kill" params = unlockBarrier barrier
 
 main :: IO ()
 main = do
   mConfig <- importConfig
   config <- if isJust mConfig then return mConfig else exitFailure
-  
 
   client <- connectSession
   _ <-
@@ -179,6 +179,9 @@ main = do
           ]
       }
 
-  forkIO $ setupIpcSocket notifyState
+  terminationBarrier <- newEmptyMVar
 
-  forever $ threadDelay (maxBound - 1)
+  forkIO $ setupIpcSocket notifyState terminationBarrier
+  waitAtBarrier terminationBarrier
+
+-- forever $ threadDelay (maxBound - 1)

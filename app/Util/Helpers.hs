@@ -1,5 +1,17 @@
 module Util.Helpers where
 
+import Control.Concurrent (MVar, putMVar, takeMVar)
+import Control.Monad (void)
+
+data Permit = Permit
+type Barrier = MVar Permit
+
+unlockBarrier :: Barrier -> IO ()
+unlockBarrier barrier = putMVar barrier Permit
+
+waitAtBarrier :: Barrier -> IO ()
+waitAtBarrier = void . takeMVar
+
 thd :: (a, b, c) -> c
 thd (_, _, c) = c
 
