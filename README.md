@@ -60,45 +60,45 @@ End checks `$XDG_CONFIG_HOME/end` (most likely `~/.config`) for a `config.toml`,
 
 ```toml
 [config]
-### Eww variable name used for the "literal" widget.
+### Optional. Eww variable name used for the "literal" widget.
 eww-content-key = "end-notifications"
 
-### Name of the widget used for general notifications. If this is not supplied, End will 
-### fall back to a default widget (which is really ugly, so you'll want to set this ^^).
+### Optional. Name of the widget used for general notifications. If this is not supplied, End 
+### will fall back to a default widget (which is really ugly, so you'll want to set this ^^).
 eww-default-notification-key = ""
 
-### The maximal number of notifications that are shown at a time. When the current number of 
-### visible notifications exceeds this value, the notification with the soonest timeout will be 
+### Optional. The maximal number of notifications that are shown at a time. When the current number
+### of visible notifications exceeds this value, the notification with the soonest timeout will be 
 ### dropped. If none of the notifications have a timeout, the oldest will be dropped.
 ###
 ### A value of 0 means that notifications will never get dropped.
 max-notifications = 0
 
-### Defines whether multiple notifications should be displayed above each other (v) or
+### Optional. Defines whether multiple notifications should be displayed above each other (v) or
 ### next to each other (h).
 notification-orientation = "v"
 
-### Defines the timeouts for different types of notifications in seconds. A value 
+### Optional. Defines the timeouts for different types of notifications in seconds. A value 
 ### of 0 means that the notification will never timeout
 timeout.urgency.low = 5
 timeout.urgency.normal = 10
 timeout.urgency.critical = 0
 
-### This allows you to define custom notification types for special purposes.
+### Optional. This allows you to define custom notification types for special purposes.
 ### You can define as many as you want.
 [[notification-type]]
-### The name of the notification. 
+### Required. The name of the notification. 
 name = "battery-warning"
 
-### The name of the eww widget that should be used to display this type of notification.
+### Required. The name of the eww widget that should be used to display this type of notification.
 eww-key = "battery_widget" 
 
-### The hint value for the key "end-type" that triggers this type of notification. This 
-### example notification could, for instance, be triggered by running 
+### Required. The hint value for the key "end-type" that triggers this type of notification.
+### This example notification could, for instance, be triggered by running 
 ### "notify-send --hint=string:end-type:battery 'battery low'".
 hint = "battery"
 
-### Specifies a custom timeout that overrides the urgency-based value. Again, a value of 0
+### Required. Specifies a custom timeout that overrides the urgency-based value. Again, a value of 0
 ### means that the notification will not time out.
 timeout = 0
 

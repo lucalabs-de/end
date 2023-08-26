@@ -74,7 +74,9 @@ instance FromValue Config where
   fromValue =
     parseTableFromValue
       ( Config
-          <$> reqKey "config"
+          <$> optKeyWithDefault
+            "config"
+            (settings defaultConfig)
           <*> optKeyWithDefault
             "notification-type"
             (customNotifications defaultConfig)
