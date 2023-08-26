@@ -109,6 +109,7 @@ notify state appName replaceId appIcon summary body actions hints _ = do
           , body = body
           , hintString = hintString
           , widget = Nothing
+          , window = "notification-frame"
           }
 
   let notifications' = notification : notifications notificationState

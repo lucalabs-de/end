@@ -16,6 +16,7 @@ data Notification = Notification
   , body :: Text
   , hintString :: String
   , widget :: Maybe String
+  , window :: String
   }
 
 newtype NotificationState = NotificationState
