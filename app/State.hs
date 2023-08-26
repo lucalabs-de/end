@@ -2,13 +2,13 @@ module State where
 
 import Control.Concurrent (MVar, modifyMVar)
 import Control.Monad.State (State, runState)
+import Data.Text
 import Data.Tuple (swap)
 import Data.Word (Word32)
-import Data.Text
 
 data Notification = Notification
-  { timeout :: Int
-  , nId :: Word32
+  { nId :: Word32
+  , nTimeout :: Word32
   , notifyType :: Maybe String
   , appName :: Text
   , appIcon :: Text
@@ -16,7 +16,6 @@ data Notification = Notification
   , body :: Text
   , hintString :: String
   , widget :: Maybe String
-  , window :: String
   }
 
 newtype NotificationState = NotificationState

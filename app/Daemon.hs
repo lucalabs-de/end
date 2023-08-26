@@ -46,11 +46,19 @@ import Network.Socket.ByteString (recv)
 import State
 import System.Process (callCommand)
 
-import Config (importConfig)
+import Config (
+  Config (customNotifications, settings),
+  CustomNotification (name),
+  Settings (ewwDefaultNotificationKey, timeout),
+  Timeout (byUrgency),
+  importConfig,
+ )
 import Control.Exception (onException)
 import Data.Maybe (fromJust, isJust)
 import System.Directory.Internal.Prelude (exitFailure)
 import Toml (Value (Bool))
+
+import Data.List (find)
 import Util.Builders
 import Util.Constants
 import Util.DbusNotify
@@ -75,9 +83,9 @@ getCapabilites =
     , "action-icons"
     ]
 
-removeAfterTimeout :: NState -> Word32 -> Int -> IO ()
+removeAfterTimeout :: NState -> Word32 -> Word32 -> IO ()
 removeAfterTimeout state id timeout = do
-  threadDelay (timeout * 1000 * 1000)
+  threadDelay (fromIntegral timeout * 1000 * 1000)
   closeNotification state id
 
 closeNotification :: NState -> Word32 -> IO ()
@@ -85,43 +93,108 @@ closeNotification state id = do
   l <- atomicModifyStrict state (tuple . NotificationState . filter (\n -> nId n /= id) . notifications)
   displayNotifications $ notifications l
 
+-- let customType =
+--       getStringHint hints hintKeyNotifyType
+--         >>= (\n -> find (\s -> name s == n) (customNotifications config))
+-- let customType = do
+--   hints <- getStringHint hints hintKeyNotifyType
+--   Nothing
+--
+-- let notifyFunction = maybe notifyDefault notifyCustom customType
+--
+-- notifyFunction state config appName replaceId appIcon summary body actions hints timeout
 notify ::
   NState ->
+  Config ->
   Text -> -- application name
   Word32 -> -- replaces id
   Text -> -- app icon
   Text -> -- summary
   Text -> -- body
   [Text] -> -- actions
-  Map Text Variant -> -- hints
+  Hints -> -- hints
+  Int32 -> -- timeout (not supported)
+  IO Word32
+notify state config appName replaceId appIcon summary body actions hints timeout = do
+  let customType = do
+        customHint <- getStringHint hints hintKeyNotifyType
+        find (\s -> name s == customHint) (customNotifications config)
+
+  let notifyFunction = maybe notifyDefault notifyCustom customType
+  notifyFunction state config appName replaceId appIcon summary body actions hints timeout
+
+notifyDefault ::
+  NState ->
+  Config ->
+  Text -> -- application name
+  Word32 -> -- replaces id
+  Text -> -- app icon
+  Text -> -- summary
+  Text -> -- body
+  [Text] -> -- actions
+  Hints -> -- hints
   Int32 -> -- timeout
   IO Word32
-notify state appName replaceId appIcon summary body actions hints _ = do
+notifyDefault state config appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
 
-  let hintString = buildHintString hints
+  let cfgSettings = settings config
+  let currentUrgency = configKeyFromUrgency (getUrgency hints)
+
   let getLastId = getMax nId 0
+  let hintString = buildHintString hints
+
+  let notificationId =
+        if replaceId /= 0
+          then replaceId
+          else 1 + getLastId (notifications notificationState)
 
   let notification =
         Notification
-          { nId = 1 + getLastId (notifications notificationState)
-          , timeout = 0 -- TODO read this from config depending on urgency
+          { nId = notificationId
+          , nTimeout = currentUrgency . byUrgency . timeout $ cfgSettings
           , notifyType = getStringHint hints hintKeyNotifyType
           , appName = appName
           , appIcon = appIcon
           , summary = summary
           , body = body
           , hintString = hintString
-          , widget = Nothing
-          , window = "notification-frame"
+          , widget = ewwDefaultNotificationKey cfgSettings
           }
 
-  let notifications' = notification : notifications notificationState
+  handleNewNotification state notification
+
+notifyCustom ::
+  CustomNotification ->
+  NState ->
+  Config ->
+  Text ->
+  Word32 ->
+  Text ->
+  Text ->
+  Text ->
+  [Text] ->
+  Hints ->
+  Int32 ->
+  IO Word32
+notifyCustom custom state config appName replaceId appIcon summary body actions hints _ = do
+  return 1
+
+handleNewNotification :: NState -> Notification -> IO Word32
+handleNewNotification state notification = do
+  notificationState <- readMVar state
+
+  let notifications' =
+        replaceOrPrepend
+          (\n -> nId n == nId notification)
+          notification
+          (notifications notificationState)
+
   swapMVar state (NotificationState notifications')
 
-  when (timeout notification /= 0) $
+  when (nTimeout notification /= 0) $
     void . forkIO $
-      removeAfterTimeout state (nId notification) (timeout notification)
+      removeAfterTimeout state (nId notification) (nTimeout notification)
 
   displayNotifications notifications'
   return $ nId notification
@@ -183,5 +256,3 @@ main = do
 
   forkIO $ setupIpcSocket notifyState terminationBarrier
   waitAtBarrier terminationBarrier
-
--- forever $ threadDelay (maxBound - 1)
