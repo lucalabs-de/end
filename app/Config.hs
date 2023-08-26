@@ -3,9 +3,11 @@
 module Config where
 
 import Control.Exception (onException)
+import Control.Monad (void)
+import Data.List (intersperse)
 import Data.Maybe (fromMaybe)
 import Data.Word (Word32)
-import System.Directory (XdgDirectory (XdgConfig), getXdgDirectory)
+import System.Directory (XdgDirectory (XdgConfig), doesFileExist, getXdgDirectory)
 import System.FilePath (joinPath)
 import Toml (Result (..), decode)
 import Toml.FromValue (FromValue (fromValue), ParseTable, optKey, parseTableFromValue, reqKey)
@@ -15,7 +17,7 @@ defaultConfig =
   Config
     { settings =
         Settings
-          { ewwContentKey = ""
+          { ewwContentKey = "end-notifications"
           , ewwDefaultNotificationKey = Nothing
           , maxNotifications = 0
           , notificationOrientation = Vertical
@@ -109,17 +111,6 @@ instance FromValue CustomNotification where
           <*> optKeyWithDefault "timeout" 0
       )
 
--- instance FromValue Orientation where
---   fromValue =
---     parseTableFromValue
---       ( \case
---           Just "v" -> Vertical
---           Just "h" -> Horizontal
---           Nothing -> notificationOrientation defaultConfig
---           _ -> Vertical
---           <$> optKey "notification-orientation"
---       )
-
 instance FromValue Timeout where
   fromValue = parseTableFromValue (Timeout <$> reqKey "urgency")
 
@@ -140,26 +131,33 @@ instance FromValue TimeoutByUrgency where
 optKeyWithDefault :: FromValue a => String -> a -> ParseTable a
 optKeyWithDefault k v = fromMaybe v <$> optKey k
 
+prettyPrintParserOutput :: [String] -> IO ()
+prettyPrintParserOutput = mapM_ putStrLn
+
+prettyPrintParserError :: [String] -> IO ()
+prettyPrintParserError e = putStrLn "There were errors your config.toml! \n" >> prettyPrintParserOutput e
+
+prettyPrintParserWarning :: [String] -> IO ()
+prettyPrintParserWarning e = putStrLn "Warning:" >> prettyPrintParserOutput e
+
 importConfig :: IO (Maybe Config)
 importConfig =
-  onException
-    ( do
-        configDir <- getXdgDirectory XdgConfig ""
-        let configFile = joinPath [configDir, "end", "config.toml"]
+  do
+    configDir <- getXdgDirectory XdgConfig ""
+    let configFile = joinPath [configDir, "end", "config.toml"]
+    exists <- doesFileExist configFile
 
+    if exists
+      then do
         configStr <- readFile configFile
         let config = decode configStr :: Result String Config
 
         case config of
           Success w cfg ->
             do
-             print w
-             return $ Just cfg
+              print w
+              return $ Just cfg
           Failure e -> do
-            print e
+            prettyPrintParserError e
             return Nothing
-    )
-    ( do
-        putStrLn "config parsing failed"
-        return Nothing
-    )
+      else return Nothing
