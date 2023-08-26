@@ -118,7 +118,7 @@ notify ::
 notify state config appName replaceId appIcon summary body actions hints timeout = do
   let customType = do
         customHint <- getStringHint hints hintKeyNotifyType
-        find (\s -> name s == customHint) (customNotifications config)
+        find (\s -> hint s == customHint) (customNotifications config)
 
   let notifyFunction = maybe notifyDefault notifyCustom customType
   notifyFunction state config appName replaceId appIcon summary body actions hints timeout
@@ -153,7 +153,7 @@ notifyDefault state config appName replaceId appIcon summary body actions hints 
         Notification
           { nId = notificationId
           , nTimeout = currentUrgency . byUrgency . timeout $ cfgSettings
-          , notifyType = getStringHint hints hintKeyNotifyType
+          , notifyType = Nothing
           , appName = appName
           , appIcon = appIcon
           , summary = summary
