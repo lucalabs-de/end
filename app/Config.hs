@@ -4,13 +4,24 @@ module Config where
 
 import Control.Exception (onException)
 import Control.Monad (void)
+import Control.Monad.Cont (unless)
 import Data.List (intersperse)
 import Data.Maybe (fromMaybe)
 import Data.Word (Word32)
-import System.Directory (XdgDirectory (XdgConfig), doesFileExist, getXdgDirectory)
+import System.Directory (
+  XdgDirectory (XdgConfig),
+  doesFileExist,
+  getXdgDirectory,
+ )
 import System.FilePath (joinPath)
 import Toml (Result (..), decode)
-import Toml.FromValue (FromValue (fromValue), ParseTable, optKey, parseTableFromValue, reqKey)
+import Toml.FromValue (
+  FromValue (fromValue),
+  ParseTable,
+  optKey,
+  parseTableFromValue,
+  reqKey,
+ )
 
 defaultConfig :: Config
 defaultConfig =
@@ -157,7 +168,7 @@ importConfig =
         case config of
           Success w cfg ->
             do
-              print w
+              unless (null w) (prettyPrintParserWarning w)
               return $ Just cfg
           Failure e -> do
             prettyPrintParserError e
