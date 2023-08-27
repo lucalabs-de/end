@@ -8,6 +8,7 @@ The Eww Notification Daemon, or End for short, allows you to do exactly that. It
 libnotify notifications. You define the eww widgets that are used to display a notification and the eww window that they will appear in. You can 
 define multiple widgets for your notifications and select between them via libnotify hints. 
 
+![Basic Eww Notifications](.github/basic.png)
 
 ## Getting Started
 You can either build the project yourself or use one of the prebuilt binaries under Releases. 
