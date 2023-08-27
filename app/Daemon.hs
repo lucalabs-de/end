@@ -93,16 +93,6 @@ closeNotification state id = do
   l <- atomicModifyStrict state (tuple . NotificationState . filter (\n -> nId n /= id) . notifications)
   displayNotifications $ notifications l
 
--- let customType =
---       getStringHint hints hintKeyNotifyType
---         >>= (\n -> find (\s -> name s == n) (customNotifications config))
--- let customType = do
---   hints <- getStringHint hints hintKeyNotifyType
---   Nothing
---
--- let notifyFunction = maybe notifyDefault notifyCustom customType
---
--- notifyFunction state config appName replaceId appIcon summary body actions hints timeout
 notify ::
   NState ->
   Config ->
