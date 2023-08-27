@@ -125,35 +125,6 @@ The parameters correspond to the libnotify [notification components](https://spe
 In the future, I plan to parse the libnotify standard hints (like `image-path`, `category`, etc.) internally and expose the corresponding values
 individually as eww widget parameters. Until then you will need to parse them from the `end-hints` parameter manually using eww's expressions.
 
-#### Example Configuration (WIP)
-A complete example configuration could look as follows.
+#### Example Configuration 
+You can find a complete -- but basic -- example configuration in [EXAMPLE.md](EXAMPLE.md)
 
-##### eww.yuck
-```yuck
-(defvar end-notifications "")
-
-(defwindow notification_frame
- :monitor 0
- :geometry (geometry 
-     :x "0px"
-     :y "0px"
-     :width "100px"
-     :height "100%"
-     :anchor "top right")
- :stacking "fg"
- :windowtype "desktop"
- :wm-ignore true
- (literal :content end-notifications))
-
- ...
-
-```
-##### config.toml
-```toml
-...
-```
-
-## Todo
-- Support libnotify standard hints
-- Finish example configuration
-- Add screenshots to README
