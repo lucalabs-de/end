@@ -67,6 +67,10 @@ eww-content-key = "end-notifications"
 ### will fall back to a default widget (which is really ugly, so you'll want to set this ^^).
 eww-default-notification-key = ""
 
+### Optional. Name of the eww window that the notifications are rendered in. If this is set,
+### End will manage the window for you. If not, you will have to open/close it yourself. 
+eww-window = ""
+
 ### Optional. The maximal number of notifications that are shown at a time. When the current number
 ### of visible notifications exceeds this value, the notification with the soonest timeout will be 
 ### dropped. If none of the notifications have a timeout, the oldest will be dropped.

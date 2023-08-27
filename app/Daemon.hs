@@ -49,9 +49,11 @@ import System.Process (callCommand)
 import Config (
   Config (customNotifications, settings),
   CustomNotification (customTimeout, ewwKey, hint, name),
-  Settings (ewwDefaultNotificationKey, timeout),
+  EwwWindow,
+  Settings (ewwDefaultNotificationKey, ewwWindow, timeout),
   Timeout (byUrgency),
   importConfig,
+  (//),
  )
 import Control.Exception (onException)
 import Data.Maybe (fromJust, isJust)
@@ -83,19 +85,34 @@ getCapabilites =
     , "action-icons"
     ]
 
-removeAfterTimeout :: NState -> Word32 -> Word32 -> IO ()
-removeAfterTimeout state id timeout = do
-  threadDelay (fromIntegral timeout * 1000 * 1000)
-  closeNotification state id
+openEwwWindow :: EwwWindow -> IO ()
+openEwwWindow = callCommand . buildWindowOpenCommand
 
+closeEwwWindow :: EwwWindow -> IO ()
+closeEwwWindow = callCommand . buildWindowCloseCommand
+
+removeAfterTimeout :: NState -> Maybe EwwWindow -> Word32 -> Word32 -> IO ()
+removeAfterTimeout state window id timeout = do
+  threadDelay (fromIntegral timeout * 1000 * 1000)
+  removeNotification state window id
+
+removeNotification :: NState -> Maybe EwwWindow -> Word32 -> IO ()
+removeNotification state window id = do
+  l <- atomicModifyStrict state (tuple . updateNotifications (filter (\n -> nId n /= id)))
+  displayNotifications window $ notifications l
+
+-- Implements org.freedesktop.Notifications.CloseNotification
 closeNotification :: NState -> Word32 -> IO ()
 closeNotification state id = do
-  l <- atomicModifyStrict state (tuple . NotificationState . filter (\n -> nId n /= id) . notifications)
-  displayNotifications $ notifications l
+  s <- readMVar state
+  let cfg = config s
 
+  let window = ewwWindow . settings $ cfg
+  removeNotification state window id
+
+-- Implements org.freedesktop.Notifications.Notify
 notify ::
   NState ->
-  Config ->
   Text -> -- application name
   Word32 -> -- replaces id
   Text -> -- app icon
@@ -105,17 +122,19 @@ notify ::
   Hints -> -- hints
   Int32 -> -- timeout (not supported)
   IO Word32
-notify state config appName replaceId appIcon summary body actions hints timeout = do
+notify state appName replaceId appIcon summary body actions hints timeout = do
+  s <- readMVar state
+  let cfg = config s
+
   let customType = do
         customHint <- getStringHint hints hintKeyNotifyType
-        find (\s -> hint s == customHint) (customNotifications config)
+        find (\s -> hint s == customHint) (customNotifications cfg)
 
   let notifyFunction = maybe notifyDefault notifyCustom customType
-  notifyFunction state config appName replaceId appIcon summary body actions hints timeout
+  notifyFunction state appName replaceId appIcon summary body actions hints timeout
 
 notifyDefault ::
   NState ->
-  Config ->
   Text -> -- application name
   Word32 -> -- replaces id
   Text -> -- app icon
@@ -125,10 +144,11 @@ notifyDefault ::
   Hints -> -- hints
   Int32 -> -- timeout
   IO Word32
-notifyDefault state config appName replaceId appIcon summary body actions hints _ = do
+notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
+  let cfg = config notificationState
 
-  let cfgSettings = settings config
+  let cfgSettings = settings cfg
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
 
   let getLastId = getMax nId 0
@@ -157,7 +177,6 @@ notifyDefault state config appName replaceId appIcon summary body actions hints 
 notifyCustom ::
   CustomNotification ->
   NState ->
-  Config ->
   Text ->
   Word32 ->
   Text ->
@@ -167,7 +186,7 @@ notifyCustom ::
   Hints ->
   Int32 ->
   IO Word32
-notifyCustom custom state config appName replaceId appIcon summary body actions hints _ = do
+notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
 
   let getLastId = getMax nId 0
@@ -196,27 +215,32 @@ notifyCustom custom state config appName replaceId appIcon summary body actions 
 handleNewNotification :: NState -> Notification -> IO Word32
 handleNewNotification state notification = do
   notificationState <- readMVar state
+  let cfg = config notificationState
 
-  let notifications' =
-        replaceOrPrepend
-          (\n -> nId n == nId notification)
-          notification
-          (notifications notificationState)
+  let window = cfg // settings // ewwWindow
 
-  swapMVar state (NotificationState notifications')
+  newState <-
+    atomicModifyStrict state $
+      tuple
+        . updateNotifications
+          (replaceOrPrepend (\n -> nId n == nId notification) notification)
 
   when (nTimeout notification /= 0) $
     void . forkIO $
-      removeAfterTimeout state (nId notification) (nTimeout notification)
+      removeAfterTimeout state window (nId notification) (nTimeout notification)
 
-  displayNotifications notifications'
+  displayNotifications window (notifications newState)
   return $ nId notification
 
-displayNotifications :: [Notification] -> IO ()
-displayNotifications l = do
-  let widgetString = buildWidgetWrapper True $ buildWidgetString l
-  putStrLn widgetString
-  callCommand $ setEwwValue "end-notifications" widgetString
+displayNotifications :: Maybe EwwWindow -> [Notification] -> IO ()
+displayNotifications w l =
+  if not $ null l
+    then do
+      let widgetString = buildWidgetWrapper True $ buildWidgetString l
+      putStrLn widgetString
+      callCommand $ setEwwValue "end-notifications" widgetString
+      mapM_ openEwwWindow w
+    else mapM_ closeEwwWindow w
 
 setupIpcSocket :: NState -> Barrier -> IO ()
 setupIpcSocket state term = do
@@ -235,8 +259,11 @@ socketLoop state sock barrier = forever $ do
   evalCommand state barrier command args
 
 evalCommand :: NState -> Barrier -> String -> [String] -> IO ()
-evalCommand state _ "close" params = closeNotification state $ read (head params)
 evalCommand state barrier "kill" params = unlockBarrier barrier
+evalCommand state _ "close" params = do
+  s <- readMVar state
+  let cfg = config s
+  removeNotification state (ewwWindow . settings $ cfg) (read (head params))
 
 main :: IO ()
 main = do
@@ -250,7 +277,12 @@ main = do
       "org.freedesktop.Notifications"
       [nameAllowReplacement, nameReplaceExisting]
 
-  notifyState <- newMVar $ NotificationState []
+  notifyState <-
+    newMVar $
+      NotificationState
+        { notifications = []
+        , config = fromJust config
+        }
 
   export
     client
@@ -261,7 +293,7 @@ main = do
           [ autoMethod "GetServerInformation" getServerInformation
           , autoMethod "GetCapabilites" getCapabilites
           , autoMethod "CloseNotification" (closeNotification notifyState)
-          , autoMethod "Notify" (notify notifyState (fromJust config))
+          , autoMethod "Notify" (notify notifyState)
           ]
       }
 

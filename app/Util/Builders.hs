@@ -9,8 +9,11 @@ import State
 setEwwValue :: String -> String -> String
 setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
 
-buildWindowCommand :: String -> String
-buildWindowCommand w = "eww open " ++ w
+buildWindowOpenCommand :: String -> String
+buildWindowOpenCommand w = "eww open " ++ w
+
+buildWindowCloseCommand :: String -> String
+buildWindowCloseCommand w = "eww close " ++ w
 
 buildWidgetWrapper :: Bool -> String -> String
 buildWidgetWrapper True widgets = "(box :orientation \"vertical\" " ++ widgets ++ ")"

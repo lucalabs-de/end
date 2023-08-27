@@ -30,6 +30,7 @@ defaultConfig =
         Settings
           { ewwContentKey = "end-notifications"
           , ewwDefaultNotificationKey = Nothing
+          , ewwWindow = Nothing
           , maxNotifications = 0
           , notificationOrientation = Vertical
           , timeout =
@@ -44,6 +45,8 @@ defaultConfig =
           }
     , customNotifications = []
     }
+
+type EwwWindow = String
 
 data Orientation = Horizontal | Vertical
   deriving (Eq, Show)
@@ -69,6 +72,7 @@ data CustomNotification = CustomNotification
 data Settings = Settings
   { ewwContentKey :: String
   , ewwDefaultNotificationKey :: Maybe String
+  , ewwWindow :: Maybe EwwWindow
   , maxNotifications :: Word32
   , notificationOrientation :: Orientation
   , timeout :: Timeout
@@ -99,6 +103,7 @@ instance FromValue Settings where
       ( Settings
           <$> reqKey "eww-content-key"
           <*> optKey "eww-default-notification-key"
+          <*> optKey "eww-window"
           <*> optKeyWithDefault
             "max-notifications"
             (maxNotifications defaultSettings)
@@ -174,3 +179,9 @@ importConfig =
             prettyPrintParserError e
             return Nothing
       else return Nothing
+
+-- convenience function to access config fields
+(//) :: a -> (a -> b) -> b
+(//) r f = f r
+
+infixl 0 //
