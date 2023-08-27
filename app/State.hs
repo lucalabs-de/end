@@ -22,6 +22,7 @@ data Notification = Notification
 data NotificationState = NotificationState
   { notifications :: [Notification]
   , config :: Config
+  , idCounter :: Word32
   }
 
 type NState = MVar NotificationState
@@ -34,3 +35,6 @@ updateConfig f state = state{config = f $ config state}
 updateNotifications ::
   ([Notification] -> [Notification]) -> NotificationState -> NotificationState
 updateNotifications f state = state{notifications = f $ notifications state}
+
+updateIdCounter :: (Word32 -> Word32) -> NotificationState -> NotificationState
+updateIdCounter f state = state{idCounter = f $ idCounter state}

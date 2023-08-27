@@ -60,6 +60,7 @@ import Data.Maybe (fromJust, isJust)
 import System.Directory.Internal.Prelude (exitFailure)
 import Toml (Value (Bool))
 
+import Data.Bifunctor (second)
 import Data.List (find)
 import Util.Builders
 import Util.Constants
@@ -84,6 +85,9 @@ getCapabilites =
     , "icon-static"
     , "action-icons"
     ]
+
+nextId :: NState -> IO Word32
+nextId state = atomicModifyStrict state (second idCounter . tuple . updateIdCounter (+ 1))
 
 openEwwWindow :: EwwWindow -> IO ()
 openEwwWindow = callCommand . buildWindowOpenCommand
@@ -149,14 +153,12 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   let cfg = config notificationState
 
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
-
-  let getLastId = getMax nId 0
   let hintString = buildHintString hints
 
-  let notificationId =
-        if replaceId /= 0
-          then replaceId
-          else 1 + getLastId (notifications notificationState)
+  notificationId <-
+    if replaceId /= 0
+      then return replaceId
+      else nextId state
 
   let notification =
         Notification
@@ -188,11 +190,10 @@ notifyCustom ::
 notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
 
-  let getLastId = getMax nId 0
-  let notificationId =
-        if replaceId /= 0
-          then replaceId
-          else 1 + getLastId (notifications notificationState)
+  notificationId <-
+    if replaceId /= 0
+      then return replaceId
+      else nextId state
 
   let hintString = buildHintString hints
 
@@ -281,6 +282,7 @@ main = do
       NotificationState
         { notifications = []
         , config = fromJust config
+        , idCounter = 0
         }
 
   export
