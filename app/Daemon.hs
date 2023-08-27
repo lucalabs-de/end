@@ -178,7 +178,30 @@ notifyCustom ::
   Int32 ->
   IO Word32
 notifyCustom custom state config appName replaceId appIcon summary body actions hints _ = do
-  return 1
+  notificationState <- readMVar state
+
+  let getLastId = getMax nId 0
+  let notificationId =
+        if replaceId /= 0
+          then replaceId
+          else 1 + getLastId (notifications notificationState)
+
+  let hintString = buildHintString hints
+
+  let notification =
+        Notification
+          { nId = notificationId
+          , nTimeout = customTimeout custom
+          , notifyType = Just (name custom)
+          , appName = appName
+          , appIcon = appIcon
+          , summary = summary
+          , body = body
+          , hintString = hintString
+          , widget = Just (ewwKey custom)
+          }
+
+  handleNewNotification state notification
 
 handleNewNotification :: NState -> Notification -> IO Word32
 handleNewNotification state notification = do
@@ -248,7 +271,7 @@ main = do
           [ autoMethod "GetServerInformation" getServerInformation
           , autoMethod "GetCapabilites" getCapabilites
           , autoMethod "CloseNotification" (closeNotification notifyState)
-          , autoMethod "Notify" (notify notifyState)
+          , autoMethod "Notify" (notify notifyState (fromJust config))
           ]
       }
 
