@@ -107,7 +107,7 @@ closeNotification state id = do
   s <- readMVar state
   let cfg = config s
 
-  let window = ewwWindow . settings $ cfg
+  let window = cfg // settings // ewwWindow
   removeNotification state window id
 
 -- Implements org.freedesktop.Notifications.Notify
@@ -148,7 +148,6 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
   let cfg = config notificationState
 
-  let cfgSettings = settings cfg
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
 
   let getLastId = getMax nId 0
@@ -162,14 +161,14 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   let notification =
         Notification
           { nId = notificationId
-          , nTimeout = currentUrgency . byUrgency . timeout $ cfgSettings
+          , nTimeout = cfg // settings // timeout // byUrgency // currentUrgency
           , notifyType = Nothing
           , appName = appName
           , appIcon = appIcon
           , summary = summary
           , body = body
           , hintString = hintString
-          , widget = ewwDefaultNotificationKey cfgSettings
+          , widget = cfg // settings // ewwDefaultNotificationKey
           }
 
   handleNewNotification state notification
@@ -263,7 +262,7 @@ evalCommand state barrier "kill" params = unlockBarrier barrier
 evalCommand state _ "close" params = do
   s <- readMVar state
   let cfg = config s
-  removeNotification state (ewwWindow . settings $ cfg) (read (head params))
+  removeNotification state (cfg // settings // ewwWindow) (read (head params))
 
 main :: IO ()
 main = do
