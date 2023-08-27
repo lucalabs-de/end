@@ -54,7 +54,7 @@ buildEwwNotification Nothing _ _ _ summary _ _ =
 buildEwwNotification (Just widgetName) nId appName appIcon summary body hints =
   "("
     ++ widgetName
-    ++ ":end-id \""
+    ++ " :end-id \""
     ++ show nId
     ++ "\" :end-appname \""
     ++ unpack appName
