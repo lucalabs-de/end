@@ -126,5 +126,5 @@ In the future, I plan to parse the libnotify standard hints (like `image-path`, 
 individually as eww widget parameters. Until then you will need to parse them from the `end-hints` parameter manually using eww's expressions.
 
 #### Example Configuration 
-You can find a complete -- but basic -- example configuration in [EXAMPLE.md](EXAMPLE.md)
+You can find a basic complete example configuration in [EXAMPLE.md](EXAMPLE.md)
 
