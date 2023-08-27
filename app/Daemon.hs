@@ -48,7 +48,7 @@ import System.Process (callCommand)
 
 import Config (
   Config (customNotifications, settings),
-  CustomNotification (name),
+  CustomNotification (customTimeout, ewwKey, hint, name),
   Settings (ewwDefaultNotificationKey, timeout),
   Timeout (byUrgency),
   importConfig,
