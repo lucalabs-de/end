@@ -70,15 +70,15 @@ timeout = 0
 ##### eww.scss
 ```scss
 .end-default-notification-box {
-  background-color: $end-default-bg;
+  background-color: #3a454a; 
   padding: 12px;
   margin: 12px;
   border-radius: 10px;
 }
 
 .notification-text {
-  color: $end-default-fg;
-  font-family: 'FantasqueSansMonoNerdFontAAE Nerd Font Mono'
+  color: #d3c6aa; 
+  font-family: 'Your Favorite Font'
 }
 
 .notification-title {
