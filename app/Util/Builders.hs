@@ -48,7 +48,7 @@ buildEwwNotification ::
   String ->
   String
 buildEwwNotification Nothing _ _ _ summary _ _ =
-  "(label :class \"def\" :text \""
+  "(label :text \""
     ++ unpack summary
     ++ "\" :xalign 1 :halign \"end\" :css \"label { padding-right: 12px; padding-top: 6px }\")"
 buildEwwNotification (Just widgetName) nId appName appIcon summary body hints =
