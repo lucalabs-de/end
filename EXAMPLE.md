@@ -65,6 +65,37 @@ timeout = 0
           :xalign 0 
           :text "${end-summary}")'
     })))
+
+(defwidget battery-widget
+  [end-id end-appname end-appicon end-summary end-body end-hints]
+  (eventbox
+    :onclick "end close ${end-id}" 
+    (box
+      :class "end-default-notification-box"
+      :orientation "horizontal"
+      :space-evenly false
+      (label
+        :class "notification-text battery-icon"
+        :yalign 0.5
+        :xalign 0.5
+        :text "󰁺"
+      )
+      (box
+        :orientation "vertical"
+        :hexpand true
+        (label 
+          :class "notification-text notification-title"
+          :hexpand true
+          :yalign 0.5
+          :xalign 0
+          :text "Low Battery")
+        (label
+          :class "notification-text"
+          :vexpand true
+          :hexpand true
+          :yalign 0.5
+          :xalign 0
+          :text "${EWW_BATTERY["BAT0"]["capacity"]}% remaining")))))
 ```
 
 ##### eww.scss
