@@ -39,6 +39,7 @@ buildHintString :: Map Text Variant -> String
 buildHintString = Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) ""
  where
   showEntry k v = "(" ++ unpack k ++ "," ++ show v ++ ")"
+  show (Variant (ValueAtom (AtomText x))) = unpack x
   show (Variant x) = showValue True x
 
 buildEwwNotification ::
