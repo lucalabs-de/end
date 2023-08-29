@@ -1,7 +1,7 @@
 # Eww Notification Daemon
 
 There are a few great notification daemons around. Unfortunately, they all use their own configuration language. 
-If you already use eww for your widgets, wouldn't it be great if you could just use it for your notifications as well?
+If you already use [eww](https://github.com/elkowar/eww) for your widgets, wouldn't it be great if you could just use it for your notifications as well?
 
 ## Features
 The Eww Notification Daemon, or End for short, allows you to do exactly that. It leverages eww's `literal` widget to dynamically display 
