@@ -1,6 +1,8 @@
 ## Example Config
 
-A complete example configuration could look as follows.
+The following is an example config that implements a basic widget for general notifications, as well as a special "low battery" widget.
+
+![Notification Example](.github/example.png)
 
 ##### config.toml
 ```toml
