@@ -3,6 +3,7 @@ module Util.Helpers where
 import Control.Concurrent (MVar, putMVar, takeMVar)
 import Control.Monad (void)
 import Data.Bifunctor (second)
+import Data.List (minimumBy)
 
 data Permit = Permit
 type Barrier = MVar Permit
@@ -32,3 +33,6 @@ replaceOrPrepend f e l = if fst replaceResult then snd replaceResult else e : l
 tryReplace :: (a -> Bool) -> a -> [a] -> (Bool, [a])
 tryReplace f e [] = (False, [])
 tryReplace f e (h : l) = if f h then (True, e : l) else second (h :) (tryReplace f e l)
+
+minWith :: Ord b => (a -> b) -> [a] -> a
+minWith f = minimumBy (\a b -> compare (f a) (f b))

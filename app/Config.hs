@@ -181,4 +181,4 @@ importConfig =
 (//) :: a -> (a -> b) -> b
 (//) r f = f r
 
-infixl 0 //
+infixl 9 //

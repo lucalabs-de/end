@@ -50,7 +50,7 @@ import Config (
   Config (customNotifications, settings),
   CustomNotification (customTimeout, ewwKey, hint, name),
   EwwWindow,
-  Settings (ewwDefaultNotificationKey, ewwWindow, timeout),
+  Settings (ewwDefaultNotificationKey, ewwWindow, maxNotifications, timeout),
   Timeout (byUrgency),
   importConfig,
   (//),
@@ -62,6 +62,8 @@ import Toml (Value (Bool))
 
 import Data.Bifunctor (second)
 import Data.List (find)
+import Data.Time.Clock.System (getSystemTime)
+
 import Util.Builders
 import Util.Constants
 import Util.DbusNotify
@@ -155,6 +157,7 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
   let hintString = buildHintString hints
 
+  timestamp <- getSystemTime
   notificationId <-
     if replaceId /= 0
       then return replaceId
@@ -164,6 +167,7 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
         Notification
           { nId = notificationId
           , nTimeout = cfg // settings // timeout // byUrgency // currentUrgency
+          , nTimestamp = timestamp
           , notifyType = Nothing
           , appName = appName
           , appIcon = appIcon
@@ -190,6 +194,7 @@ notifyCustom ::
 notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
 
+  timestamp <- getSystemTime
   notificationId <-
     if replaceId /= 0
       then return replaceId
@@ -201,6 +206,7 @@ notifyCustom custom state appName replaceId appIcon summary body actions hints _
         Notification
           { nId = notificationId
           , nTimeout = customTimeout custom
+          , nTimestamp = timestamp
           , notifyType = Just (name custom)
           , appName = appName
           , appIcon = appIcon
@@ -215,15 +221,24 @@ notifyCustom custom state appName replaceId appIcon summary body actions hints _
 handleNewNotification :: NState -> Notification -> IO Word32
 handleNewNotification state notification = do
   notificationState <- readMVar state
-  let cfg = config notificationState
 
+  let cfg = config notificationState
   let window = cfg // settings // ewwWindow
+  let maxN = cfg // settings // maxNotifications
+
+  let notifyTransform ns = do
+        let (r, l) = tryReplace (\n -> nId n == nId notification) notification ns
+        if not r
+          then
+            if maxN > 0 && length l >= fromIntegral maxN
+              then do let oldest = minWith lifetime l
+                      replaceOrPrepend (== oldest) notification l
+              else notification : l
+          else l
 
   newState <-
     atomicModifyStrict state $
-      tuple
-        . updateNotifications
-          (replaceOrPrepend (\n -> nId n == nId notification) notification)
+      tuple . updateNotifications notifyTransform
 
   when (nTimeout notification /= 0) $
     void . forkIO $
