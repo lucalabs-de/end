@@ -8,7 +8,6 @@ The following is an example config that implements a basic widget for general no
 ```toml
 [config]
 eww-window = "notification-frame"
-eww-content-key = "end-notifications"
 eww-default-notification-key = "end-notification"
 max-notifications = 10
 notification-orientation = "v"
@@ -28,16 +27,16 @@ timeout = 0
 ```yuck
 (defvar end-notifications "")
 
-(defwindow notification_frame
+(defwindow notification-frame
  :monitor 0
  :geometry (geometry 
      :x "0px"
      :y "0px"
-     :width "100px"
-     :height "100%"
+     :width "480px"
+     :height "0px"
      :anchor "top right")
  :stacking "fg"
- :windowtype "desktop"
+ :windowtype "dialog"
  :wm-ignore true
  (literal :content end-notifications))
 
