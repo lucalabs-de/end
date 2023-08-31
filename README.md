@@ -36,7 +36,7 @@ in your WM's init file.
 
 #### Eww Configuration
 You need to provide an eww window that End will use to show notifications. For this to work, the window is required 
-to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`. The name of the variable is configurable.
+to contain the widget `(literal :content end-notifications)`, where `end-notifications` is an eww variable that needs to be defined using `(defvar end-notifications "")`.
 
 #### Commands
 The following commands are supported.
@@ -61,9 +61,6 @@ End checks `$XDG_CONFIG_HOME/end` (most likely `~/.config`) for a `config.toml`,
 
 ```toml
 [config]
-### Optional. Eww variable name used for the "literal" widget.
-eww-content-key = "end-notifications"
-
 ### Optional. Name of the widget used for general notifications. If this is not supplied, End 
 ### will fall back to a default widget (which is really ugly, so you'll want to set this ^^).
 eww-default-notification-key = ""
