@@ -231,8 +231,9 @@ handleNewNotification state notification = do
         if not r
           then
             if maxN > 0 && length l >= fromIntegral maxN
-              then do let oldest = minWith lifetime l
-                      replaceOrPrepend (== oldest) notification l
+              then do
+                let oldest = minWith lifetime l
+                replaceOrPrepend (== oldest) notification l
               else notification : l
           else l
 
