@@ -28,8 +28,7 @@ defaultConfig =
   Config
     { settings =
         Settings
-          { ewwContentKey = "end-notifications"
-          , ewwDefaultNotificationKey = Nothing
+          { ewwDefaultNotificationKey = Nothing
           , ewwWindow = Nothing
           , maxNotifications = 0
           , notificationOrientation = Vertical
@@ -70,8 +69,7 @@ data CustomNotification = CustomNotification
   deriving (Eq, Show)
 
 data Settings = Settings
-  { ewwContentKey :: String
-  , ewwDefaultNotificationKey :: Maybe String
+  { ewwDefaultNotificationKey :: Maybe String
   , ewwWindow :: Maybe EwwWindow
   , maxNotifications :: Word32
   , notificationOrientation :: Orientation
@@ -101,8 +99,7 @@ instance FromValue Settings where
   fromValue =
     parseTableFromValue
       ( Settings
-          <$> reqKey "eww-content-key"
-          <*> optKey "eww-default-notification-key"
+          <$> optKey "eww-default-notification-key"
           <*> optKey "eww-window"
           <*> optKeyWithDefault
             "max-notifications"
