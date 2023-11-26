@@ -32,7 +32,7 @@ executable end
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    
-      base ^>=4.16.4.0,
+      base >=4.16.4.0,
       dbus ^>=1.2.29,
       X11 ^>=1.10.3,
       text ^>=1.2.5.0,
