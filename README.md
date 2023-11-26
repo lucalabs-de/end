@@ -11,10 +11,29 @@ define multiple widgets for your notifications and select between them via libno
 ![Basic Eww Notifications](.github/basic.png)
 
 ## Getting Started
-You can either build the project yourself or use one of the prebuilt binaries under Releases. 
+You can either build the project yourself or use one of the prebuilt binaries under Releases.
 
-#### Building from Source
-This project is written in Haskell. You can use [GHCup](https://www.haskell.org/ghcup/) to install the required tools.
+### Building from Source
+
+#### Using Stack
+I recommend using Stack to avoid dependency problems. To install Stack, just run
+
+```bash
+curl -sSL https://get.haskellstack.org/ | sh
+```
+or check out [docs.haskellstack.org](https://docs.haskellstack.org/en/stable/install_and_upgrade/#manual-download) if you don't like `curl | sh`. 
+Then run the following commands to build End. 
+
+```bash
+git clone https://github.com/lucalabs-de/end
+cd end
+stack install
+```
+
+This will install the executable under `~/.local/bin`.
+
+#### Using Cabal
+You can also use Cabal. The required tools can be installed by [GHCup](https://www.haskell.org/ghcup/).
 To build End, run the following commands.
 
 ```bash
@@ -26,13 +45,13 @@ You will find the executable under
 ```
 dist-newstyle/build/x86_64-linux/ghc-<GHC version>/EwwNotificationDaemon-<End version>/x/end/build/end
 ```
+
+## Usage
 To start the notification daemon, simply run the executable. You'll probably want to put something like
 ```bash
 end &
 ```
 in your WM's init file. 
-
-## Usage
 
 #### Eww Configuration
 You need to provide an eww window that End will use to show notifications. For this to work, the window is required 
