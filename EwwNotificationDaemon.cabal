@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               EwwNotificationDaemon
-version:            0.1.1.0
+version:            1.1.0
 synopsis:           Linux Notification Daemon using Eww Widgets
 
 homepage:
@@ -32,19 +32,19 @@ executable end
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    
-      base >=4.16.4.0,
-      dbus ^>=1.2.29,
-      X11 ^>=1.10.3,
-      text ^>=1.2.5.0,
-      process ^>=1.6.17.0,
-      mtl ^>=2.2.2,
-      containers ^>=0.6.5.1,
+      base,
+      dbus,
+      X11,
+      text,
+      process,
+      mtl,
+      containers,
       extensible-exceptions,
       bytestring,
-      atomic-modify ^>=0.1.0.3,
-      network ^>=3.1.2.8,
-      optparse-applicative ^>=0.18.1.0,
-      toml-parser ^>=1.3.0.0,
+      atomic-modify,
+      network,
+      optparse-applicative,
+      toml-parser,
       directory,
       filepath,
       time
