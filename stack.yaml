@@ -1,0 +1,11 @@
+resolver:
+  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2023/11/26.yaml
+
+packages:
+- .
+
+extra-deps:
+- atomic-modify-0.1.0.3
+
+allow-newer: true
+
