@@ -23,9 +23,13 @@ flip23 f a c b = f a b c
 tuple :: a -> (a, a)
 tuple v = (v, v)
 
+replaceNewlines :: String -> String
+replaceNewlines = map (\c -> if c == '\n' then ' ' else c)
+
 replaceOrPrepend :: (a -> Bool) -> a -> [a] -> [a]
 replaceOrPrepend f e l = if fst replaceResult then snd replaceResult else e : l
-  where replaceResult = tryReplace f e l
+ where
+  replaceResult = tryReplace f e l
 
 -- Tries to replace the first element that matches the predicate.
 -- Returns (True, l) where l is the new list if an element was replaced
@@ -34,5 +38,5 @@ tryReplace :: (a -> Bool) -> a -> [a] -> (Bool, [a])
 tryReplace f e [] = (False, [])
 tryReplace f e (h : l) = if f h then (True, e : l) else second (h :) (tryReplace f e l)
 
-minWith :: Ord b => (a -> b) -> [a] -> a
+minWith :: (Ord b) => (a -> b) -> [a] -> a
 minWith f = minimumBy (\a b -> compare (f a) (f b))
