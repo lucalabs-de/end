@@ -76,7 +76,7 @@ end close <id>
 Closes the notification with the given ID. Useful for notifications that don't time out.
 
 ## Configuration
-End checks `$XDG_CONFIG_HOME/end` (most likely `~/.config`) for a `config.toml`, which is structured as follows.
+End checks `$XDG_CONFIG_HOME/end` (most likely `~/.config/end`) for a `config.toml`, which is structured as follows.
 
 ```toml
 [config]
