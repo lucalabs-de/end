@@ -29,7 +29,9 @@ import DBus.Client (
 import Data.ByteString.Char8 (split, unpack)
 import Data.Int (Int32)
 import Data.Map (Map)
+import qualified Data.Map as Map
 import Data.Text (Text)
+import qualified Data.Text as Text
 import Data.Word (Word32)
 import Network.Socket (
   Family (AF_UNIX),
@@ -78,14 +80,15 @@ getServerInformation =
     , "1.2"
     )
 
-getCapabilites :: IO [String]
-getCapabilites =
+getCapabilities :: IO [String]
+getCapabilities =
   return
     [ "body"
     , "hints"
     , "persistence"
     , "icon-static"
     , "action-icons"
+    , "actions"
     ]
 
 nextId :: NState -> IO Word32
@@ -155,7 +158,7 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   let cfg = config notificationState
 
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
-  let hintString = buildHintString hints
+  let hintString = buildHintString (Map.delete "image-data" hints) -- TODO: Handle images
 
   timestamp <- getSystemTime
   notificationId <-
@@ -169,10 +172,10 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
           , nTimeout = cfg // settings // timeout // byUrgency // currentUrgency
           , nTimestamp = timestamp
           , notifyType = Nothing
-          , appName = appName
+          , appName = Text.replace "\n" " " appName
           , appIcon = appIcon
-          , summary = summary
-          , body = body
+          , summary = Text.replace "\n" " " summary
+          , body = Text.replace "\n" " " body
           , hintString = hintString
           , widget = cfg // settings // ewwDefaultNotificationKey
           }
@@ -308,7 +311,7 @@ main = do
       { interfaceName = "org.freedesktop.Notifications"
       , interfaceMethods =
           [ autoMethod "GetServerInformation" getServerInformation
-          , autoMethod "GetCapabilites" getCapabilites
+          , autoMethod "GetCapabilities" getCapabilities
           , autoMethod "CloseNotification" (closeNotification notifyState)
           , autoMethod "Notify" (notify notifyState)
           ]
