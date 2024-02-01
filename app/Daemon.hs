@@ -31,7 +31,6 @@ import Data.Int (Int32)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text)
-import qualified Data.Text as Text
 import Data.Word (Word32)
 import Network.Socket (
   Family (AF_UNIX),
@@ -172,10 +171,10 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
           , nTimeout = cfg // settings // timeout // byUrgency // currentUrgency
           , nTimestamp = timestamp
           , notifyType = Nothing
-          , appName = Text.replace "\n" " " appName
+          , appName = appName
           , appIcon = appIcon
-          , summary = Text.replace "\n" " " summary
-          , body = Text.replace "\n" " " body
+          , summary = summary
+          , body = body
           , hintString = hintString
           , widget = cfg // settings // ewwDefaultNotificationKey
           }
@@ -255,7 +254,8 @@ displayNotifications :: Maybe EwwWindow -> [Notification] -> IO ()
 displayNotifications w l =
   if not $ null l
     then do
-      let widgetString = buildWidgetWrapper True $ buildWidgetString l
+      let replaceNewlines = map (\c -> if c=='\n' then ' '; else c)
+      let widgetString = replaceNewlines (buildWidgetWrapper True $ buildWidgetString l)
       putStrLn widgetString
       callCommand $ setEwwValue "end-notifications" widgetString
       mapM_ openEwwWindow w
