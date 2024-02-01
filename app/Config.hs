@@ -174,7 +174,9 @@ importConfig =
           Failure e -> do
             prettyPrintParserError e
             return Nothing
-      else return Nothing
+      else do 
+        putStrLn $ "could not find config file! should be at " ++ configFile
+        return Nothing
 
 -- convenience function to access config fields
 (//) :: a -> (a -> b) -> b
