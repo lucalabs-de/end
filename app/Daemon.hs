@@ -254,8 +254,7 @@ displayNotifications :: Maybe EwwWindow -> [Notification] -> IO ()
 displayNotifications w l =
   if not $ null l
     then do
-      let replaceNewlines = map (\c -> if c=='\n' then ' '; else c)
-      let widgetString = replaceNewlines (buildWidgetWrapper True $ buildWidgetString l)
+      let widgetString = buildWidgetWrapper True $ replaceNewlines $ buildWidgetString l
       putStrLn widgetString
       callCommand $ setEwwValue "end-notifications" widgetString
       mapM_ openEwwWindow w
