@@ -47,6 +47,7 @@ executable end
       toml-parser,
       directory,
       filepath,
-      time
+      time,
+      split
     hs-source-dirs:   app
     default-language: Haskell2010

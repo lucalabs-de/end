@@ -158,6 +158,7 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
 
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
   let hintString = buildHintString (Map.delete "image-data" hints) -- TODO: Handle images
+  let actionString = buildActionString actions
 
   timestamp <- getSystemTime
   notificationId <-
@@ -176,6 +177,7 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
           , summary = summary
           , body = body
           , hintString = hintString
+          , actionString = actionString
           , widget = cfg // settings // ewwDefaultNotificationKey
           }
 
@@ -202,7 +204,8 @@ notifyCustom custom state appName replaceId appIcon summary body actions hints _
       then return replaceId
       else nextId state
 
-  let hintString = buildHintString hints
+  let hintString = buildHintString (Map.delete "image-data" hints) -- TODO: Handle images
+  let actionString = buildActionString actions
 
   let notification =
         Notification
@@ -215,6 +218,7 @@ notifyCustom custom state appName replaceId appIcon summary body actions hints _
           , summary = summary
           , body = body
           , hintString = hintString
+          , actionString = actionString
           , widget = Just (ewwKey custom)
           }
 

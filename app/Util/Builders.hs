@@ -4,6 +4,7 @@ import DBus.Internal.Types
 import Data.Map hiding (foldr)
 import Data.Text hiding (foldr)
 import Data.Word (Word32)
+import qualified Data.List.Split as Split
 import State
 
 setEwwValue :: String -> String -> String
@@ -32,6 +33,7 @@ buildWidgetString =
             (summary n)
             (body n)
             (hintString n)
+            (actionString n)
     )
     ""
 
@@ -42,6 +44,16 @@ buildHintString = Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) ""
   show (Variant (ValueAtom (AtomText x))) = unpack x
   show (Variant x) = showValue True x
 
+buildActionString :: [Text] -> String
+buildActionString list = 
+  do
+    -- TODO: Drop last chunk if list is uneven
+    let newlist = Split.chunksOf 2 (Prelude.map unpack list)
+    "[" ++ unpack (
+      intercalate (pack ", ")
+      (Prelude.map (\[k, v] -> pack ("{ id: \\\"" ++ k ++ "\\\", text: \\\"" ++ v ++ "\\\" }")) newlist)
+      ) ++ "]"
+
 buildEwwNotification ::
   Maybe String ->
   Word32 ->
@@ -50,12 +62,13 @@ buildEwwNotification ::
   Text ->
   Text ->
   String ->
+  String ->
   String
-buildEwwNotification Nothing _ _ _ summary _ _ =
+buildEwwNotification Nothing _ _ _ summary _ _ _ =
   "(label :text \""
     ++ unpack summary
     ++ "\" :xalign 1 :halign \"end\" :css \"label { padding-right: 12px; padding-top: 6px }\")"
-buildEwwNotification (Just widgetName) nId appName appIcon summary body hints =
+buildEwwNotification (Just widgetName) nId appName appIcon summary body hints actions =
   "("
     ++ widgetName
     ++ " :end-id \""
@@ -70,4 +83,6 @@ buildEwwNotification (Just widgetName) nId appName appIcon summary body hints =
     ++ unpack body
     ++ "\" :end-hints \""
     ++ hints
+    ++ "\" :end-actions \""
+    ++ actions
     ++ "\")"

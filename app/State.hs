@@ -18,6 +18,7 @@ data Notification = Notification
   , summary :: Text
   , body :: Text
   , hintString :: String
+  , actionString :: String
   , widget :: Maybe String
   }
   deriving (Show, Eq)
