@@ -32,6 +32,7 @@ executable end
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    
+      array,
       base,
       dbus,
       text,
