@@ -4,6 +4,7 @@ import Control.Concurrent (MVar, putMVar, takeMVar)
 import Control.Monad (void)
 import Data.Bifunctor (second)
 import Data.List (minimumBy)
+import Control.Monad.Trans.Maybe (MaybeT(MaybeT))
 
 data Permit = Permit
 type Barrier = MVar Permit
@@ -20,6 +21,9 @@ tuple v = (v, v)
 
 minWith :: (Ord b) => (a -> b) -> [a] -> a
 minWith f = minimumBy (\a b -> compare (f a) (f b))
+
+liftMaybe :: (Monad m) => Maybe a -> MaybeT m a
+liftMaybe = MaybeT . return
 
 -- Async
 unlockBarrier :: Barrier -> IO ()

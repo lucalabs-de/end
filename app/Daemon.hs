@@ -6,15 +6,12 @@ import Control.Concurrent (
   forkIO,
   newEmptyMVar,
   newMVar,
-  putMVar,
   readMVar,
-  swapMVar,
-  takeMVar,
   threadDelay,
  )
 import Control.Concurrent.AtomicModify (atomicModifyStrict)
 import Control.Monad (forever, void, when)
-import DBus (Variant)
+import Control.Monad.Trans.Maybe
 import DBus.Client (
   Interface (interfaceName),
   autoMethod,
@@ -28,7 +25,6 @@ import DBus.Client (
  )
 import Data.ByteString.Char8 (split, unpack)
 import Data.Int (Int32)
-import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text)
 import Data.Word (Word32)
@@ -56,19 +52,21 @@ import Config (
   importConfig,
   (//),
  )
-import Control.Exception (onException)
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, fromMaybe, isJust)
 import System.Directory.Internal.Prelude (exitFailure)
-import Toml (Value (Bool))
 
 import Data.Bifunctor (second)
 import Data.List (find)
 import Data.Time.Clock.System (getSystemTime)
 
+import Control.Monad.IO.Class
+import Control.Monad.Trans
+import DBus (toVariant)
 import Util.Builders
 import Util.Constants
 import Util.DbusNotify
 import Util.Helpers
+import Util.ImageConversion (writeImageDataToPng)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -138,8 +136,15 @@ notify state appName replaceId appIcon summary body actions hints timeout = do
         customHint <- getStringHint hints hintKeyNotifyType
         find (\s -> hint s == customHint) (customNotifications cfg)
 
+  maybeFixedHints <- runMaybeT $ do
+    imageData <- liftMaybe $ getImageDataHint hints "image-data"
+    imagePath <- lift $ writeImageDataToPng imageData
+    return $ Map.insert "image-path" (toVariant imagePath) $ Map.delete "image-data" hints
+
+  let sanitizedHints = fromMaybe hints maybeFixedHints
+
   let notifyFunction = maybe notifyDefault notifyCustom customType
-  notifyFunction state appName replaceId appIcon summary body actions hints timeout
+  notifyFunction state appName replaceId appIcon summary body actions sanitizedHints timeout
 
 notifyDefault ::
   NState ->
@@ -157,7 +162,7 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   let cfg = config notificationState
 
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
-  let hintString = buildHintString (Map.delete "image-data" hints) -- TODO: Handle images
+  let hintString = buildHintString hints
 
   timestamp <- getSystemTime
   notificationId <-

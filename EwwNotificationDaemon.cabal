@@ -27,6 +27,7 @@ executable end
       Util.DbusNotify,
       Util.Constants,
       Util.CliParsers,
+      Util.ImageConversion,
       Paths_EwwNotificationDaemon
 
     -- LANGUAGE extensions used by modules in this package.
@@ -38,6 +39,7 @@ executable end
       text,
       process,
       mtl,
+      transformers,
       containers,
       extensible-exceptions,
       bytestring,
@@ -47,6 +49,9 @@ executable end
       toml-parser,
       directory,
       filepath,
-      time
+      temporary,
+      time,
+      JuicyPixels
     hs-source-dirs:   app
     default-language: Haskell2010
+    ghc-options: -Wall -Wno-name-shadowing
