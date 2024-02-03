@@ -6,6 +6,7 @@ import Data.Text hiding (foldr)
 import Data.Word (Word32)
 import qualified Data.List.Split as Split
 import State
+import Util.Helpers (cnv)
 
 setEwwValue :: String -> String -> String
 setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
@@ -38,21 +39,17 @@ buildWidgetString =
     ""
 
 buildHintString :: Map Text Variant -> String
-buildHintString = Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) ""
+buildHintString = buildListString
+
+buildListString :: Map Text Variant -> String
+buildListString = Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) ""
  where
   showEntry k v = "(" ++ unpack k ++ "," ++ show v ++ ")"
   show (Variant (ValueAtom (AtomText x))) = unpack x
   show (Variant x) = showValue True x
 
 buildActionString :: [Text] -> String
-buildActionString list = 
-  do
-    -- TODO: Drop last chunk if list is uneven
-    let newlist = Split.chunksOf 2 (Prelude.map unpack list)
-    "[" ++ unpack (
-      intercalate (pack ", ")
-      (Prelude.map (\[k, v] -> pack ("{ id: \\\"" ++ k ++ "\\\", text: \\\"" ++ v ++ "\\\" }")) newlist)
-      ) ++ "]"
+buildActionString list = buildListString (Data.Map.map toVariant (Data.Map.fromList (cnv list)))
 
 buildEwwNotification ::
   Maybe String ->
