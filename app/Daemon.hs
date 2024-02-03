@@ -60,7 +60,7 @@ import System.Directory.Internal.Prelude (exitFailure)
 
 import Data.Bifunctor (second)
 import Data.List (find)
-import Data.Time.Clock.System (getSystemTime)
+import Data.Time.Clock.System (getSystemTime, SystemTime (systemSeconds))
 
 import Util.Builders
 import Util.Constants
@@ -138,7 +138,8 @@ notify state appName replaceId appIcon summary body actions hints timeout = do
 
   maybeFixedHints <- runMaybeT $ do
     imageData <- liftMaybe $ getImageDataHint hints "image-data"
-    imagePath <- lift $ toVariant <$> writeImageDataToPng imageData
+    imageName <- lift $ show . systemSeconds <$> getSystemTime
+    imagePath <- lift $ toVariant <$> writeImageDataToPng imageName imageData
     return $ Map.insert "image-path" imagePath $ Map.delete "image-data" hints
 
   let sanitizedHints = fromMaybe hints maybeFixedHints
