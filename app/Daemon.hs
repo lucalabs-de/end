@@ -11,7 +11,9 @@ import Control.Concurrent (
  )
 import Control.Concurrent.AtomicModify (atomicModifyStrict)
 import Control.Monad (forever, unless, void, when)
+import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
+import DBus (toVariant)
 import DBus.Client (
   Interface (interfaceName),
   autoMethod,
@@ -60,9 +62,6 @@ import Data.Bifunctor (second)
 import Data.List (find)
 import Data.Time.Clock.System (getSystemTime)
 
-import Control.Monad.IO.Class
-import Control.Monad.Trans
-import DBus (toVariant)
 import Util.Builders
 import Util.Constants
 import Util.DbusNotify
@@ -158,7 +157,7 @@ notifyDefault ::
   Hints -> -- hints
   Int32 -> -- timeout
   IO Word32
-notifyDefault state appName replaceId appIcon summary body actions hints _ = do
+notifyDefault state appName replaceId appIcon summary body _ hints _ = do
   notificationState <- readMVar state
   let cfg = config notificationState
 
@@ -199,7 +198,7 @@ notifyCustom ::
   Hints ->
   Int32 ->
   IO Word32
-notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
+notifyCustom custom state appName replaceId appIcon summary body _ hints _ = do
   timestamp <- getSystemTime
   notificationId <-
     if replaceId /= 0
