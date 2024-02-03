@@ -138,8 +138,8 @@ notify state appName replaceId appIcon summary body actions hints timeout = do
 
   maybeFixedHints <- runMaybeT $ do
     imageData <- liftMaybe $ getImageDataHint hints "image-data"
-    imagePath <- lift $ writeImageDataToPng imageData
-    return $ Map.insert "image-path" (toVariant imagePath) $ Map.delete "image-data" hints
+    imagePath <- lift $ toVariant <$> writeImageDataToPng imageData
+    return $ Map.insert "image-path" imagePath $ Map.delete "image-data" hints
 
   let sanitizedHints = fromMaybe hints maybeFixedHints
 
