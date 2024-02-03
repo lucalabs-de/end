@@ -21,7 +21,6 @@ executable end
       Daemon,
       State,
       Config,
-      XWindow,
       Util.Builders,
       Util.Helpers,
       Util.DbusNotify,
@@ -35,7 +34,6 @@ executable end
     build-depends:    
       base,
       dbus,
-      X11,
       text,
       process,
       mtl,

@@ -10,7 +10,7 @@ import Control.Concurrent (
   threadDelay,
  )
 import Control.Concurrent.AtomicModify (atomicModifyStrict)
-import Control.Monad (forever, void, when)
+import Control.Monad (forever, unless, void, when)
 import Control.Monad.Trans.Maybe
 import DBus.Client (
   Interface (interfaceName),
@@ -23,6 +23,7 @@ import DBus.Client (
   nameReplaceExisting,
   requestName,
  )
+import qualified Data.ByteString as BS
 import Data.ByteString.Char8 (split, unpack)
 import Data.Int (Int32)
 import qualified Data.Map as Map
@@ -199,8 +200,6 @@ notifyCustom ::
   Int32 ->
   IO Word32
 notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
-  notificationState <- readMVar state
-
   timestamp <- getSystemTime
   notificationId <-
     if replaceId /= 0
@@ -278,15 +277,17 @@ socketLoop :: NState -> Socket -> Barrier -> IO ()
 socketLoop state sock barrier = forever $ do
   (client, _) <- accept sock
   msg <- recv client 1024
-  let command : args = unpack <$> split ' ' msg
-  evalCommand state barrier command args
+  unless (BS.null msg) $ do
+    let command : args = unpack <$> split ' ' msg
+    evalCommand state barrier command args
 
 evalCommand :: NState -> Barrier -> String -> [String] -> IO ()
-evalCommand state barrier "kill" params = unlockBarrier barrier
+evalCommand _ barrier "kill" _ = unlockBarrier barrier
 evalCommand state _ "close" params = do
   s <- readMVar state
   let cfg = config s
   removeNotification state (cfg // settings // ewwWindow) (read (head params))
+evalCommand _ _ _ _ = return ()
 
 main :: IO ()
 main = do
@@ -323,5 +324,5 @@ main = do
 
   terminationBarrier <- newEmptyMVar
 
-  forkIO $ setupIpcSocket notifyState terminationBarrier
+  _ <- forkIO $ setupIpcSocket notifyState terminationBarrier
   waitAtBarrier terminationBarrier
