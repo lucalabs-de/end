@@ -8,12 +8,7 @@ import Data.List (minimumBy)
 data Permit = Permit
 type Barrier = MVar Permit
 
-unlockBarrier :: Barrier -> IO ()
-unlockBarrier barrier = putMVar barrier Permit
-
-waitAtBarrier :: Barrier -> IO ()
-waitAtBarrier = void . takeMVar
-
+-- General Util
 thd :: (a, b, c) -> c
 thd (_, _, c) = c
 
@@ -23,6 +18,17 @@ flip23 f a c b = f a b c
 tuple :: a -> (a, a)
 tuple v = (v, v)
 
+minWith :: (Ord b) => (a -> b) -> [a] -> a
+minWith f = minimumBy (\a b -> compare (f a) (f b))
+
+-- Async
+unlockBarrier :: Barrier -> IO ()
+unlockBarrier barrier = putMVar barrier Permit
+
+waitAtBarrier :: Barrier -> IO ()
+waitAtBarrier = void . takeMVar
+
+-- List operations
 replaceNewlines :: String -> String
 replaceNewlines = map (\c -> if c == '\n' then ' ' else c)
 
@@ -35,8 +41,6 @@ replaceOrPrepend f e l = if fst replaceResult then snd replaceResult else e : l
 -- Returns (True, l) where l is the new list if an element was replaced
 -- and (False, l) otherwise.
 tryReplace :: (a -> Bool) -> a -> [a] -> (Bool, [a])
-tryReplace f e [] = (False, [])
+tryReplace _ _ [] = (False, [])
 tryReplace f e (h : l) = if f h then (True, e : l) else second (h :) (tryReplace f e l)
 
-minWith :: (Ord b) => (a -> b) -> [a] -> a
-minWith f = minimumBy (\a b -> compare (f a) (f b))
