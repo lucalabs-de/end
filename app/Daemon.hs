@@ -66,7 +66,7 @@ import Util.Builders
 import Util.Constants
 import Util.DbusNotify
 import Util.Helpers
-import Util.ImageConversion (writeImageDataToPng)
+import Util.ImageConversion (writeImageDataToPng, wipeImageDirectory)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -106,6 +106,7 @@ removeNotification :: NState -> Maybe EwwWindow -> Word32 -> IO ()
 removeNotification state window id = do
   l <- atomicModifyStrict state (tuple . updateNotifications (filter (\n -> nId n /= id)))
   displayNotifications window $ notifications l
+  when (null $ notifications l) wipeImageDirectory
 
 -- Implements org.freedesktop.Notifications.CloseNotification
 closeNotification :: NState -> Word32 -> IO ()
