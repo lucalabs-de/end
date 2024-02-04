@@ -6,7 +6,6 @@ import Util.Constants
 
 import Control.Exception (onException)
 import Data.ByteString.Char8 (pack)
-import Data.Maybe (fromJust, isNothing)
 import Network.Socket (
   Family (AF_UNIX),
   SocketType (Stream),
@@ -15,7 +14,6 @@ import Network.Socket (
   socket,
  )
 import Network.Socket.ByteString (send)
-import System.Environment (getArgs)
 
 writeIpcSocket :: [String] -> IO ()
 writeIpcSocket args =
@@ -23,7 +21,7 @@ writeIpcSocket args =
     ( do
         sock <- socket AF_UNIX Stream 0
         connect sock ipcSocketAddr
-        send sock $ (pack . unwords) args
+        _ <- send sock $ (pack . unwords) args
         close sock
     )
     (putStrLn "daemon is not running, run end first!")

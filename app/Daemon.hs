@@ -6,15 +6,14 @@ import Control.Concurrent (
   forkIO,
   newEmptyMVar,
   newMVar,
-  putMVar,
   readMVar,
-  swapMVar,
-  takeMVar,
   threadDelay,
  )
 import Control.Concurrent.AtomicModify (atomicModifyStrict)
-import Control.Monad (forever, void, when)
-import DBus (Variant)
+import Control.Monad (forever, unless, void, when)
+import Control.Monad.Trans
+import Control.Monad.Trans.Maybe
+import DBus (toVariant)
 import DBus.Client (
   Interface (interfaceName),
   autoMethod,
@@ -26,9 +25,9 @@ import DBus.Client (
   nameReplaceExisting,
   requestName,
  )
+import qualified Data.ByteString as BS
 import Data.ByteString.Char8 (split, unpack)
 import Data.Int (Int32)
-import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text)
 import Data.Word (Word32)
@@ -56,26 +55,25 @@ import Config (
   importConfig,
   (//),
  )
-import Control.Exception (onException)
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, fromMaybe, isJust)
 import System.Directory.Internal.Prelude (exitFailure)
-import Toml (Value (Bool))
 
 import Data.Bifunctor (second)
 import Data.List (find)
-import Data.Time.Clock.System (getSystemTime)
+import Data.Time.Clock.System (getSystemTime, SystemTime (systemSeconds))
 
 import Util.Builders
 import Util.Constants
 import Util.DbusNotify
 import Util.Helpers
+import Util.ImageConversion (writeImageDataToPng, wipeImageDirectory)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
   return
     ( "haskell-notification-daemon"
     , "eww"
-    , "0.0.1"
+    , "1.2.0"
     , "1.2"
     )
 
@@ -108,6 +106,7 @@ removeNotification :: NState -> Maybe EwwWindow -> Word32 -> IO ()
 removeNotification state window id = do
   l <- atomicModifyStrict state (tuple . updateNotifications (filter (\n -> nId n /= id)))
   displayNotifications window $ notifications l
+  when (null $ notifications l) wipeImageDirectory
 
 -- Implements org.freedesktop.Notifications.CloseNotification
 closeNotification :: NState -> Word32 -> IO ()
@@ -138,8 +137,16 @@ notify state appName replaceId appIcon summary body actions hints timeout = do
         customHint <- getStringHint hints hintKeyNotifyType
         find (\s -> hint s == customHint) (customNotifications cfg)
 
+  maybeFixedHints <- runMaybeT $ do
+    imageData <- liftMaybe $ getImageDataHint hints "image-data"
+    imageName <- lift $ show . systemSeconds <$> getSystemTime
+    imagePath <- lift $ toVariant <$> writeImageDataToPng imageName imageData
+    return $ Map.insert "image-path" imagePath $ Map.delete "image-data" hints
+
+  let sanitizedHints = fromMaybe hints maybeFixedHints
+
   let notifyFunction = maybe notifyDefault notifyCustom customType
-  notifyFunction state appName replaceId appIcon summary body actions hints timeout
+  notifyFunction state appName replaceId appIcon summary body actions sanitizedHints timeout
 
 notifyDefault ::
   NState ->
@@ -152,12 +159,12 @@ notifyDefault ::
   Hints -> -- hints
   Int32 -> -- timeout
   IO Word32
-notifyDefault state appName replaceId appIcon summary body actions hints _ = do
+notifyDefault state appName replaceId appIcon summary body _ hints _ = do
   notificationState <- readMVar state
   let cfg = config notificationState
 
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
-  let hintString = buildHintString (Map.delete "image-data" hints) -- TODO: Handle images
+  let hintString = buildHintString hints
 
   timestamp <- getSystemTime
   notificationId <-
@@ -193,9 +200,7 @@ notifyCustom ::
   Hints ->
   Int32 ->
   IO Word32
-notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
-  notificationState <- readMVar state
-
+notifyCustom custom state appName replaceId appIcon summary body _ hints _ = do
   timestamp <- getSystemTime
   notificationId <-
     if replaceId /= 0
@@ -273,15 +278,17 @@ socketLoop :: NState -> Socket -> Barrier -> IO ()
 socketLoop state sock barrier = forever $ do
   (client, _) <- accept sock
   msg <- recv client 1024
-  let command : args = unpack <$> split ' ' msg
-  evalCommand state barrier command args
+  unless (BS.null msg) $ do
+    let command : args = unpack <$> split ' ' msg
+    evalCommand state barrier command args
 
 evalCommand :: NState -> Barrier -> String -> [String] -> IO ()
-evalCommand state barrier "kill" params = unlockBarrier barrier
+evalCommand _ barrier "kill" _ = unlockBarrier barrier
 evalCommand state _ "close" params = do
   s <- readMVar state
   let cfg = config s
   removeNotification state (cfg // settings // ewwWindow) (read (head params))
+evalCommand _ _ _ _ = return ()
 
 main :: IO ()
 main = do
@@ -318,5 +325,5 @@ main = do
 
   terminationBarrier <- newEmptyMVar
 
-  forkIO $ setupIpcSocket notifyState terminationBarrier
+  _ <- forkIO $ setupIpcSocket notifyState terminationBarrier
   waitAtBarrier terminationBarrier
