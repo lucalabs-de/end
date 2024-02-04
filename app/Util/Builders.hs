@@ -3,6 +3,7 @@ module Util.Builders where
 import DBus.Internal.Types
 import Data.Map hiding (foldr)
 import Data.Text hiding (foldr)
+import Data.List (intercalate)
 import Data.Word (Word32)
 import qualified Data.List.Split as Split
 import State
@@ -39,17 +40,19 @@ buildWidgetString =
     ""
 
 buildHintString :: Map Text Variant -> String
-buildHintString = buildListString
+buildHintString = buildJsonString
 
-buildListString :: Map Text Variant -> String
-buildListString = Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) ""
+buildJsonString :: Map Text Variant -> String
+buildJsonString pairs = "[" ++ (Data.List.intercalate ", " (Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) [] pairs)) ++ "]"
  where
-  showEntry k v = "(" ++ unpack k ++ "," ++ show v ++ ")"
+  showEntry k v = ["{ key: \\\"" ++ unpack k ++ "\\\", value: \\\"" ++ show v ++ "\\\" }"]
   show (Variant (ValueAtom (AtomText x))) = unpack x
   show (Variant x) = showValue True x
 
 buildActionString :: [Text] -> String
-buildActionString list = buildListString (Data.Map.map toVariant (Data.Map.fromList (cnv list)))
+buildActionString list = buildJsonString actions
+ where
+  actions = Data.Map.map toVariant (Data.Map.fromList (cnv list))
 
 buildEwwNotification ::
   Maybe String ->
