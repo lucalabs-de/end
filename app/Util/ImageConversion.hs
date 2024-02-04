@@ -1,26 +1,35 @@
-{-# LANGUAGE BlockArguments #-}
-
-module Util.ImageConversion where
+module Util.ImageConversion (writeImageDataToPng, wipeImageDirectory) where
 
 import Codec.Picture (Image, PixelRGBA8 (PixelRGBA8), generateImage, writePng)
+import Control.Monad (when)
 import DBus (arrayItems, fromVariant)
 import Data.Array (listArray, (!))
 import qualified Data.Array as DA
 import Data.Maybe (fromMaybe)
 import Data.Word (Word8)
-import System.FilePath ((<.>), (</>))
-import System.IO.Temp (withSystemTempDirectory)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, removeDirectoryRecursive)
+import System.FilePath ((<.>))
+import System.IO.Temp (emptyTempFile)
+
+import Util.Constants (imageTempDir)
 import Util.DbusNotify (ImageData)
 
 type Array v = DA.Array Int v -- int-indexed array
 
+wipeImageDirectory :: IO ()
+wipeImageDirectory = do
+  exists <- doesDirectoryExist imageTempDir
+  when exists (removeDirectoryRecursive imageTempDir)
+
 writeImageDataToPng :: String -> ImageData -> IO FilePath
 writeImageDataToPng name img = do
   let png = convertImageDataToPng img
-  withSystemTempDirectory "end-images" \dir -> do
-    let path = dir </> name <.> "png"
-    writePng path png
-    return path
+
+  createDirectoryIfMissing False imageTempDir
+  path <- emptyTempFile imageTempDir (name <.> "png")
+
+  writePng path png
+  return path
 
 convertImageDataToPng :: ImageData -> Image PixelRGBA8
 convertImageDataToPng img = do
