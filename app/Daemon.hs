@@ -14,7 +14,15 @@ import Control.Concurrent (
  )
 import Control.Concurrent.AtomicModify (atomicModifyStrict)
 import Control.Monad (forever, void, when)
-import DBus (Variant)
+import DBus (
+  Variant,
+  signal,
+  signalBody,
+  interfaceName_,
+  memberName_,
+  objectPath_,
+  toVariant
+ )
 import DBus.Client (
   Interface (interfaceName),
   autoMethod,
@@ -25,6 +33,8 @@ import DBus.Client (
   nameAllowReplacement,
   nameReplaceExisting,
   requestName,
+  interfaceSignals,
+  emit
  )
 import Data.ByteString.Char8 (split, unpack)
 import Data.Int (Int32)
@@ -108,6 +118,17 @@ removeNotification :: NState -> Maybe EwwWindow -> Word32 -> IO ()
 removeNotification state window id = do
   l <- atomicModifyStrict state (tuple . updateNotifications (filter (\n -> nId n /= id)))
   displayNotifications window $ notifications l
+
+-- Implements org.freedesktop.Notifications.ActionInvoked
+invokeAction :: NState -> Word32 -> String -> IO ()
+invokeAction state id key = do
+  s <- readMVar state
+
+  let signalEmpty = signal (objectPath_ "/org/freedesktop/Notifications") (interfaceName_ "org.freedesktop.Notifications") (memberName_ "ActionInvoked")
+  let signalWithBody = signalEmpty { signalBody = [toVariant id, toVariant key] }
+
+  emit (client s) signalWithBody
+
 
 -- Implements org.freedesktop.Notifications.CloseNotification
 closeNotification :: NState -> Word32 -> IO ()
@@ -282,10 +303,12 @@ socketLoop state sock barrier = forever $ do
 
 evalCommand :: NState -> Barrier -> String -> [String] -> IO ()
 evalCommand state barrier "kill" params = unlockBarrier barrier
+evalCommand state _ "action" params = invokeAction state (read (head params)) (params !! 1)
 evalCommand state _ "close" params = do
   s <- readMVar state
   let cfg = config s
-  removeNotification state (cfg // settings // ewwWindow) (read (head params))
+  removeNotification state (cfg // settings // ewwWindow) (read (head params))  
+evalCommand _ _ _ _ = return ()
 
 main :: IO ()
 main = do
@@ -305,6 +328,7 @@ main = do
         { notifications = []
         , config = fromJust config
         , idCounter = 0
+        , client = client
         }
 
   export
@@ -318,6 +342,8 @@ main = do
           , autoMethod "CloseNotification" (closeNotification notifyState)
           , autoMethod "Notify" (notify notifyState)
           ]
+      -- , interfaceSignals =
+      --     [ signal "/org/freedesktop/Notifications" "org.freedesktop.Notifications" "ActionInvoked" ]
       }
 
   terminationBarrier <- newEmptyMVar

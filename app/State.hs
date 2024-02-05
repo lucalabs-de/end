@@ -7,6 +7,7 @@ import Data.Text
 import Data.Time.Clock.System (SystemTime (systemSeconds))
 import Data.Tuple (swap)
 import Data.Word (Word32)
+import DBus.Client (Client)
 
 data Notification = Notification
   { nId :: Word32
@@ -27,8 +28,8 @@ data NotificationState = NotificationState
   { notifications :: [Notification]
   , config :: Config
   , idCounter :: Word32
+  , client :: Client
   }
-  deriving (Show, Eq)
 
 type NState = MVar NotificationState
 

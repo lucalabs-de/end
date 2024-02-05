@@ -5,7 +5,6 @@ import Data.Map hiding (foldr)
 import Data.Text hiding (foldr)
 import Data.List (intercalate)
 import Data.Word (Word32)
-import qualified Data.List.Split as Split
 import State
 import Util.Helpers (cnv)
 
