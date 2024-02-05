@@ -2,9 +2,7 @@
 
 module Config where
 
-import Control.Exception (onException)
-import Control.Monad (void, unless)
-import Data.List (intersperse)
+import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
 import Data.Word (Word32)
 import System.Directory (

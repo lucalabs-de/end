@@ -1,11 +1,9 @@
 module State where
 
-import Config (Config, Timeout)
-import Control.Concurrent (MVar, modifyMVar)
-import Control.Monad.State (State, runState)
+import Config (Config)
+import Control.Concurrent (MVar)
 import Data.Text
 import Data.Time.Clock.System (SystemTime (systemSeconds))
-import Data.Tuple (swap)
 import Data.Word (Word32)
 import DBus.Client (Client)
 
