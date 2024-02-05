@@ -14,7 +14,6 @@ import Control.Monad (forever, unless, void, when)
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import DBus (
-  Variant,
   signal,
   signalBody,
   interfaceName_,
@@ -32,7 +31,6 @@ import DBus.Client (
   nameAllowReplacement,
   nameReplaceExisting,
   requestName,
-  interfaceSignals,
   emit
  )
 import qualified Data.ByteString as BS
@@ -180,7 +178,7 @@ notifyDefault ::
   Hints -> -- hints
   Int32 -> -- timeout
   IO Word32
-notifyDefault state appName replaceId appIcon summary body _ hints _ = do
+notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
   let cfg = config notificationState
 
@@ -223,7 +221,7 @@ notifyCustom ::
   Hints ->
   Int32 ->
   IO Word32
-notifyCustom custom state appName replaceId appIcon summary body _ hints _ = do
+notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
   timestamp <- getSystemTime
   notificationId <-
     if replaceId /= 0
@@ -308,7 +306,7 @@ socketLoop state sock barrier = forever $ do
     evalCommand state barrier command args
 
 evalCommand :: NState -> Barrier -> String -> [String] -> IO ()
-evalCommand _ barrier "kill" params = unlockBarrier barrier
+evalCommand _ barrier "kill" _ = unlockBarrier barrier
 evalCommand state _ "action" params = invokeAction state (read (head params)) (params !! 1)
 evalCommand state _ "close" params = do
   s <- readMVar state

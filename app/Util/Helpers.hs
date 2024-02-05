@@ -48,9 +48,6 @@ tryReplace :: (a -> Bool) -> a -> [a] -> (Bool, [a])
 tryReplace _ _ [] = (False, [])
 tryReplace f e (h : l) = if f h then (True, e : l) else second (h :) (tryReplace f e l)
 
-minWith :: (Ord b) => (a -> b) -> [a] -> a
-minWith f = minimumBy (\a b -> compare (f a) (f b))
-
 cnv :: [a] -> [(a, a)]
 cnv [] = []
 cnv [x] = []
