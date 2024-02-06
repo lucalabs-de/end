@@ -5,6 +5,7 @@ import Control.Concurrent (MVar)
 import Data.Text
 import Data.Time.Clock.System (SystemTime (systemSeconds))
 import Data.Word (Word32)
+import DBus.Client (Client)
 
 data Notification = Notification
   { nId :: Word32
@@ -16,6 +17,7 @@ data Notification = Notification
   , summary :: Text
   , body :: Text
   , hintString :: String
+  , actionString :: String
   , widget :: Maybe String
   }
   deriving (Show, Eq)
@@ -24,8 +26,8 @@ data NotificationState = NotificationState
   { notifications :: [Notification]
   , config :: Config
   , idCounter :: Word32
+  , client :: Client
   }
-  deriving (Show, Eq)
 
 type NState = MVar NotificationState
 

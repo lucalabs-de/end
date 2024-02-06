@@ -41,7 +41,7 @@ timeout = 0
  (literal :content end-notifications))
 
 (defwidget end-notification 
- [end-id end-appname end-appicon end-summary end-body end-hints]
+ [end-id end-appname end-appicon end-summary end-body end-hints end-actions]
  (box 
   :class "end-default-notification-box"
   (literal :content 
@@ -68,9 +68,9 @@ timeout = 0
     })))
 
 (defwidget battery-widget
-  [end-id end-appname end-appicon end-summary end-body end-hints]
+  [end-id end-appname end-appicon end-summary end-body end-hints end-actions]
   (eventbox
-    :onclick "end close ${end-id}" 
+    :onclick { matches(end-actions, "key: \"default\"") ? "/usr/local/bin/end action ${end-id} default" : "/usr/local/bin/end close ${end-id}" }
     (box
       :class "end-default-notification-box"
       :orientation "horizontal"

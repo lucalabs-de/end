@@ -29,6 +29,7 @@ writeIpcSocket args =
 sendCommand :: Command -> IO ()
 sendCommand Stop = writeIpcSocket ["kill"]
 sendCommand (Close closeOps) = writeIpcSocket ["close", nId closeOps]
+sendCommand (Action actionOps) = writeIpcSocket ["action", notificationId actionOps ++ " " ++ actionKey actionOps]
 
 main :: IO ()
 main = do

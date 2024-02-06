@@ -13,7 +13,14 @@ import Control.Concurrent.AtomicModify (atomicModifyStrict)
 import Control.Monad (forever, unless, void, when)
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
-import DBus (toVariant)
+import DBus (
+  signal,
+  signalBody,
+  interfaceName_,
+  memberName_,
+  objectPath_,
+  toVariant
+ )
 import DBus.Client (
   Interface (interfaceName),
   autoMethod,
@@ -24,6 +31,7 @@ import DBus.Client (
   nameAllowReplacement,
   nameReplaceExisting,
   requestName,
+  emit
  )
 import qualified Data.ByteString as BS
 import Data.ByteString.Char8 (split, unpack)
@@ -108,6 +116,17 @@ removeNotification state window id = do
   displayNotifications window $ notifications l
   when (null $ notifications l) wipeImageDirectory
 
+-- Implements org.freedesktop.Notifications.ActionInvoked
+invokeAction :: NState -> Word32 -> String -> IO ()
+invokeAction state id key = do
+  s <- readMVar state
+
+  let signalEmpty = signal (objectPath_ "/org/freedesktop/Notifications") (interfaceName_ "org.freedesktop.Notifications") (memberName_ "ActionInvoked")
+  let signalWithBody = signalEmpty { signalBody = [toVariant id, toVariant key] }
+
+  emit (client s) signalWithBody
+
+
 -- Implements org.freedesktop.Notifications.CloseNotification
 closeNotification :: NState -> Word32 -> IO ()
 closeNotification state id = do
@@ -159,12 +178,13 @@ notifyDefault ::
   Hints -> -- hints
   Int32 -> -- timeout
   IO Word32
-notifyDefault state appName replaceId appIcon summary body _ hints _ = do
+notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   notificationState <- readMVar state
   let cfg = config notificationState
 
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
   let hintString = buildHintString hints
+  let actionString = buildActionString actions
 
   timestamp <- getSystemTime
   notificationId <-
@@ -183,6 +203,7 @@ notifyDefault state appName replaceId appIcon summary body _ hints _ = do
           , summary = summary
           , body = body
           , hintString = hintString
+          , actionString = actionString
           , widget = cfg // settings // ewwDefaultNotificationKey
           }
 
@@ -200,14 +221,15 @@ notifyCustom ::
   Hints ->
   Int32 ->
   IO Word32
-notifyCustom custom state appName replaceId appIcon summary body _ hints _ = do
+notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
   timestamp <- getSystemTime
   notificationId <-
     if replaceId /= 0
       then return replaceId
       else nextId state
 
-  let hintString = buildHintString hints
+  let hintString = buildHintString (Map.delete "image-data" hints) -- TODO: Handle images
+  let actionString = buildActionString actions
 
   let notification =
         Notification
@@ -220,6 +242,7 @@ notifyCustom custom state appName replaceId appIcon summary body _ hints _ = do
           , summary = summary
           , body = body
           , hintString = hintString
+          , actionString = actionString
           , widget = Just (ewwKey custom)
           }
 
@@ -284,10 +307,11 @@ socketLoop state sock barrier = forever $ do
 
 evalCommand :: NState -> Barrier -> String -> [String] -> IO ()
 evalCommand _ barrier "kill" _ = unlockBarrier barrier
+evalCommand state _ "action" params = invokeAction state (read (head params)) (params !! 1)
 evalCommand state _ "close" params = do
   s <- readMVar state
   let cfg = config s
-  removeNotification state (cfg // settings // ewwWindow) (read (head params))
+  removeNotification state (cfg // settings // ewwWindow) (read (head params))  
 evalCommand _ _ _ _ = return ()
 
 main :: IO ()
@@ -308,6 +332,7 @@ main = do
         { notifications = []
         , config = fromJust config
         , idCounter = 0
+        , client = client
         }
 
   export
