@@ -16,22 +16,19 @@ import Control.Monad.Trans.Maybe
 import DBus (
   signal,
   signalBody,
-  interfaceName_,
-  memberName_,
-  objectPath_,
-  toVariant
+  toVariant,
  )
 import DBus.Client (
   Interface (interfaceName),
   autoMethod,
   connectSession,
   defaultInterface,
+  emit,
   export,
   interfaceMethods,
   nameAllowReplacement,
   nameReplaceExisting,
   requestName,
-  emit
  )
 import qualified Data.ByteString as BS
 import Data.ByteString.Char8 (split, unpack)
@@ -68,13 +65,13 @@ import System.Directory.Internal.Prelude (exitFailure)
 
 import Data.Bifunctor (second)
 import Data.List (find)
-import Data.Time.Clock.System (getSystemTime, SystemTime (systemSeconds))
+import Data.Time.Clock.System (SystemTime (systemSeconds), getSystemTime)
 
 import Util.Builders
 import Util.Constants
 import Util.DbusNotify
 import Util.Helpers
-import Util.ImageConversion (writeImageDataToPng, wipeImageDirectory)
+import Util.ImageConversion (wipeImageDirectory, writeImageDataToPng)
 
 getServerInformation :: IO (Text, Text, Text, Text)
 getServerInformation =
@@ -121,11 +118,15 @@ invokeAction :: NState -> Word32 -> String -> IO ()
 invokeAction state id key = do
   s <- readMVar state
 
-  let signalEmpty = signal (objectPath_ "/org/freedesktop/Notifications") (interfaceName_ "org.freedesktop.Notifications") (memberName_ "ActionInvoked")
-  let signalWithBody = signalEmpty { signalBody = [toVariant id, toVariant key] }
+  let signalEmpty =
+        signal
+          "/org/freedesktop/Notifications"
+          "org.freedesktop.Notifications"
+          "ActionInvoked"
+
+  let signalWithBody = signalEmpty{signalBody = [toVariant id, toVariant key]}
 
   emit (client s) signalWithBody
-
 
 -- Implements org.freedesktop.Notifications.CloseNotification
 closeNotification :: NState -> Word32 -> IO ()
@@ -311,7 +312,7 @@ evalCommand state _ "action" params = invokeAction state (read (head params)) (p
 evalCommand state _ "close" params = do
   s <- readMVar state
   let cfg = config s
-  removeNotification state (cfg // settings // ewwWindow) (read (head params))  
+  removeNotification state (cfg // settings // ewwWindow) (read (head params))
 evalCommand _ _ _ _ = return ()
 
 main :: IO ()
