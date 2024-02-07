@@ -114,7 +114,7 @@ timeout.urgency.critical = 0
 We've seen that you can define your own notification widgets. 
 The notification data is supplied to the widget by the parameter `notification`, which is a JSON object of the following form
 
-```json
+```
 {
     id: <notification id>
     application: <Application Name>
