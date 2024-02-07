@@ -21,18 +21,17 @@ import Paths_EwwNotificationDaemon (version)
 
 newtype Options = Options {optCommand :: Maybe Command}
 
-data Command = Close CloseOptions | Action ActionOptions | Stop 
+data Command = Close CloseOptions | Action ActionOptions | Stop
 newtype CloseOptions = CloseOptions {nId :: String}
 data ActionOptions = ActionOptions {notificationId :: String, actionKey :: String}
 
 commandParser :: Parser (Maybe Command)
 commandParser =
   optional $
-    hsubparser
-      ( command "stop" (info stopCommand (progDesc "Stop the notification daemon"))
-          <> command "close" (info closeCommand (progDesc "Close a notification"))
-          <> command "action" (info actionCommand (progDesc "Invoke an action"))
-      )
+    hsubparser $
+      command "stop" (info stopCommand (progDesc "Stop the notification daemon"))
+        <> command "close" (info closeCommand (progDesc "Close a notification"))
+        <> command "action" (info actionCommand (progDesc "Invoke an action"))
 
 stopCommand :: Parser Command
 stopCommand = pure Stop
