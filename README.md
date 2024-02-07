@@ -5,8 +5,7 @@ If you already use [eww](https://github.com/elkowar/eww) for your widgets, would
 
 ## Features
 The Eww Notification Daemon, or End for short, allows you to do exactly that. It leverages eww's `literal` widget to dynamically display 
-libnotify notifications. You define the eww widgets that are used to display a notification and the eww window that they will appear in. You can 
-define multiple widgets for your notifications and select between them via libnotify hints. 
+libnotify notifications. You define the eww widgets that are used to display a notification and the eww window that they will appear in. 
 
 ![Basic Eww Notifications](.github/basic.png)
 
@@ -75,6 +74,11 @@ end close <id>
 ```
 Closes the notification with the given ID. Useful for notifications that don't time out.
 
+```bash
+end action <id> <key>
+```
+Invoke the action with identifier `<key>` for the notification with the given ID.
+
 ## Configuration
 End checks `$XDG_CONFIG_HOME/end` (most likely `~/.config/end`) for a `config.toml`, which is structured as follows.
 
@@ -104,42 +108,45 @@ notification-orientation = "v"
 timeout.urgency.low = 5
 timeout.urgency.normal = 10
 timeout.urgency.critical = 0
-
-### Optional. This allows you to define custom notification types for special purposes.
-### You can define as many as you want.
-[[notification-type]]
-### Required. The name of the notification. 
-name = "battery-warning"
-
-### Required. The name of the eww widget that should be used to display this type of notification.
-eww-key = "battery_widget" 
-
-### Required. The hint value for the key "end-type" that triggers this type of notification.
-### This example notification could, for instance, be triggered by running 
-### "notify-send --hint=string:end-type:battery 'battery low'".
-hint = "battery"
-
-### Required. Specifies a custom timeout that overrides the urgency-based value. Again, a value of 0
-### means that the notification will not time out.
-timeout = 0
-
 ```
+
 #### Custom Notification Widgets
 We've seen that you can define your own notification widgets. 
-The notification data is supplied to the widget via the parameters `end-id` `end-appname` `end-appicon` `end-summary` `end-body` and `end-hints`.
+The notification data is supplied to the widget by the parameter `notification`, which is a JSON object of the following form
+
+```json
+{
+    id: <notification id>
+    application: <Application Name>
+    icon: <Notification Icon> 
+    summary: <Summary>
+    body: <Body>
+    hints: {
+        "key": "value",
+        ...
+    },
+    actions: [
+        {
+            key: <action identifier>
+            name: <action string>
+        }
+    ]
+}
+```
+
 As such, a general notification widget looks as follows.
 
 ```yuck
 (defwidget end-notification 
- [end-id end-appname end-appicon end-summary end-body end-hints]
+ [notification]
  ... your content ...)
 ```
 
 The parameters correspond to the libnotify [notification components](https://specifications.freedesktop.org/notification-spec/notification-spec-latest.html#basic-design).
 
-**Remark:**
-In the future, I plan to parse the libnotify standard hints (like `image-path`, `category`, etc.) internally and expose the corresponding values
-individually as eww widget parameters. Until then you will need to parse them from the `end-hints` parameter manually using eww's expressions.
+##### Images
+The Notification Specification defines two different ways of attaching images to notifications. Applications may either supply a file path (using the `image-path` hint) to an image or the binary image data itself (using the `image-data` hint). Since eww does not have any way of parsing binary data, end converts the image for you and exposes a file path to the resulting image. The hints will thus never contain the `image-data` key, and if the notification contains an image the `image-path` hint will be set.
+
 
 #### Example Configuration 
 You can find a basic complete example configuration in [EXAMPLE.md](EXAMPLE.md)
