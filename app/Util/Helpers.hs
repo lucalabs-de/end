@@ -2,9 +2,9 @@ module Util.Helpers where
 
 import Control.Concurrent (MVar, putMVar, takeMVar)
 import Control.Monad (void)
+import Control.Monad.Trans.Maybe (MaybeT (MaybeT))
 import Data.Bifunctor (second)
 import Data.List (minimumBy)
-import Control.Monad.Trans.Maybe (MaybeT(MaybeT))
 
 data Permit = Permit
 type Barrier = MVar Permit
@@ -48,7 +48,7 @@ tryReplace :: (a -> Bool) -> a -> [a] -> (Bool, [a])
 tryReplace _ _ [] = (False, [])
 tryReplace f e (h : l) = if f h then (True, e : l) else second (h :) (tryReplace f e l)
 
-cnv :: [a] -> [(a, a)]
-cnv [] = []
-cnv [x] = []
-cnv (k:v:t) = (k, v) : cnv t
+groupTuples :: [a] -> [(a, a)]
+groupTuples [] = []
+groupTuples [_] = []
+groupTuples (k : v : t) = (k, v) : groupTuples t

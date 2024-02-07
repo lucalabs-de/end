@@ -1,12 +1,13 @@
 module Util.Builders where
 
 import DBus.Internal.Types
-import Data.Map hiding (foldr)
-import Data.Text hiding (foldr)
-import Data.List (intercalate)
+import qualified Data.List as List
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Data.Text (Text, unpack)
 import Data.Word (Word32)
 import State
-import Util.Helpers (cnv)
+import Util.Helpers (groupTuples)
 
 setEwwValue :: String -> String -> String
 setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
@@ -42,7 +43,10 @@ buildHintString :: Map Text Variant -> String
 buildHintString = buildJsonString
 
 buildJsonString :: Map Text Variant -> String
-buildJsonString pairs = "[" ++ (Data.List.intercalate ", " (Data.Map.foldrWithKey (\k v s -> s ++ showEntry k v) [] pairs)) ++ "]"
+buildJsonString pairs =
+  "["
+    ++ List.intercalate ", " (Map.foldrWithKey (\k v s -> s ++ showEntry k v) [] pairs)
+    ++ "]"
  where
   showEntry k v = ["{ key: \\\"" ++ unpack k ++ "\\\", value: \\\"" ++ show v ++ "\\\" }"]
   show (Variant (ValueAtom (AtomText x))) = unpack x
@@ -51,7 +55,7 @@ buildJsonString pairs = "[" ++ (Data.List.intercalate ", " (Data.Map.foldrWithKe
 buildActionString :: [Text] -> String
 buildActionString list = buildJsonString actions
  where
-  actions = Data.Map.map toVariant (Data.Map.fromList (cnv list))
+  actions = Map.map toVariant (Map.fromList (groupTuples list))
 
 buildEwwNotification ::
   Maybe String ->

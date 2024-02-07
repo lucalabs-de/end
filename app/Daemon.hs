@@ -346,8 +346,6 @@ main = do
           , autoMethod "CloseNotification" (closeNotification notifyState)
           , autoMethod "Notify" (notify notifyState)
           ]
-      -- , interfaceSignals =
-      --     [ signal "/org/freedesktop/Notifications" "org.freedesktop.Notifications" "ActionInvoked" ]
       }
 
   terminationBarrier <- newEmptyMVar
