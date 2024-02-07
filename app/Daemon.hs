@@ -14,9 +14,6 @@ import Control.Monad (forever, unless, void, when)
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import DBus (
-  interfaceName_,
-  memberName_,
-  objectPath_,
   signal,
   signalBody,
   toVariant,
