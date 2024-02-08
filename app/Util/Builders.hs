@@ -2,14 +2,15 @@
 
 module Util.Builders where
 
-import DBus (Variant)
-import DBus.Internal.Types (Atom (..), Value (ValueAtom, ValueVariant), Variant (..))
 import Data.Aeson (Array, Object)
 import qualified Data.Aeson as Aeson
 import Data.Aeson.Key (fromText)
 import qualified Data.Aeson.KeyMap as Object
 import Data.Aeson.Text (encodeToLazyText)
 import Data.Aeson.Types (Value (..), (.=))
+
+import DBus (Variant)
+import DBus.Internal.Types (Atom (..), Value (ValueAtom, ValueVariant), Variant (..))
 import qualified Data.Map as Map
 import Data.Text (Text, unpack)
 import qualified Data.Text.Lazy as LT
@@ -84,8 +85,11 @@ fromVariant :: Variant -> Aeson.Value
 fromVariant (Variant (ValueVariant v)) = fromVariant v
 fromVariant (Variant (ValueAtom (AtomBool b))) = Bool b
 fromVariant (Variant (ValueAtom (AtomText t))) = String t
+fromVariant (Variant (ValueAtom (AtomInt16 i))) = Aeson.toJSON i
 fromVariant (Variant (ValueAtom (AtomInt32 i))) = Aeson.toJSON i
+fromVariant (Variant (ValueAtom (AtomInt64 i))) = Aeson.toJSON i
 fromVariant (Variant (ValueAtom (AtomWord8 i))) = Aeson.toJSON i
 fromVariant (Variant (ValueAtom (AtomWord32 i))) = Aeson.toJSON i
+fromVariant (Variant (ValueAtom (AtomWord64 i))) = Aeson.toJSON i
 fromVariant (Variant (ValueAtom (AtomDouble d))) = Aeson.toJSON d
 fromVariant _notSupported = Null
