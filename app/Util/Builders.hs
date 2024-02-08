@@ -3,6 +3,7 @@ module Util.Builders where
 import DBus.Internal.Types
 import qualified Data.List as List
 import Data.Map (Map)
+import Data.Aeson (Array, Object)
 import qualified Data.Map as Map
 import Data.Text (Text, unpack)
 import Data.Word (Word32)
@@ -59,34 +60,19 @@ buildActionString list = buildJsonString actions
   actions = Map.map toVariant (Map.fromList (groupTuples list))
 
 buildEwwNotification ::
-  Maybe String ->
-  Word32 ->
-  Text ->
-  Text ->
-  Text ->
-  Text ->
-  String ->
-  String ->
+  Maybe String -> -- notification widget
+  Object -> -- notification data
   String
-buildEwwNotification Nothing _ _ _ summary _ _ _ =
-  "(label :text \""
-    ++ unpack summary
-    ++ "\" :xalign 1 :halign \"end\" :css \"label { padding-right: 12px; padding-top: 6px }\")"
-buildEwwNotification (Just widgetName) nId appName appIcon summary body hints actions =
-  "("
-    ++ widgetName
-    ++ " :end-id \""
-    ++ show nId
-    ++ "\" :end-appname \""
-    ++ unpack appName
-    ++ "\" :end-appicon \""
-    ++ unpack appIcon
-    ++ "\" :end-summary \""
-    ++ unpack summary
-    ++ "\" :end-body \""
-    ++ unpack body
-    ++ "\" :end-hints \""
-    ++ hints
-    ++ "\" :end-actions \""
-    ++ actions
-    ++ "\")"
+buildEwwNotification (Just widgetName) notificationData =
+  printf
+    "(%s :notification %s)"
+    widgetName
+    (LT.unpack $ encodeToLazyText notificationData)
+buildEwwNotification Nothing notificationData =
+  printf 
+    "(label :text \"%s\" :xalign 1 :halign \"end\" :css \"label { padding-right: 12px; padding-top: 6px }\")"
+    summary
+ where
+  summary = case Object.lookup "summary" notificationData of
+    Just (String t) -> unpack t
+    _noSummary -> ""
