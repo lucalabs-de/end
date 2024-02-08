@@ -52,10 +52,31 @@ buildWidgetString =
       )
 
 buildHintObject :: Hints -> Object
-buildHintObject = Map.foldrWithKey (\k v a -> Object.insert (fromText k) (fromVariant v) a) Object.empty
+buildHintObject =
+  Map.foldrWithKey (\k v a -> Object.insert (fromText k) (fromVariant v) a) Object.empty
 
 buildActionArray :: [Text] -> Array
-buildActionArray = fromList . map (\(k, v) -> Aeson.object ["key" .= k, "name" .= v]) . groupTuples
+buildActionArray =
+  fromList . map (\(k, v) -> Aeson.object ["key" .= k, "name" .= v]) . groupTuples
+
+buildEwwNotification ::
+  Maybe String -> -- notification widget
+  Object -> -- notification data
+  String
+buildEwwNotification Nothing notificationData =
+  let
+    summary = case Object.lookup "summary" notificationData of
+      Just (String t) -> unpack t
+      _noSummary -> ""
+   in
+    printf
+      "(label :text \"%s\" :xalign 1 :halign \"end\" :css \"label { padding-right: 12px; padding-top: 6px }\")"
+      summary
+buildEwwNotification (Just widgetName) notificationData =
+  printf
+    "(%s :notification %s)"
+    widgetName
+    (show $ LT.unpack $ encodeToLazyText notificationData)
 
 -- REMARK: Doesn't support all variant types yet, but should be sufficient for
 -- hints and actions
@@ -68,21 +89,3 @@ fromVariant (Variant (ValueAtom (AtomWord8 i))) = Aeson.toJSON i
 fromVariant (Variant (ValueAtom (AtomWord32 i))) = Aeson.toJSON i
 fromVariant (Variant (ValueAtom (AtomDouble d))) = Aeson.toJSON d
 fromVariant _notSupported = Null
-
-buildEwwNotification ::
-  Maybe String -> -- notification widget
-  Object -> -- notification data
-  String
-buildEwwNotification (Just widgetName) notificationData =
-  printf
-    "(%s :notification %s)"
-    widgetName
-    (LT.unpack $ encodeToLazyText notificationData)
-buildEwwNotification Nothing notificationData =
-  printf 
-    "(label :text \"%s\" :xalign 1 :halign \"end\" :css \"label { padding-right: 12px; padding-top: 6px }\")"
-    summary
- where
-  summary = case Object.lookup "summary" notificationData of
-    Just (String t) -> unpack t
-    _noSummary -> ""
