@@ -38,6 +38,17 @@ defaultConfig =
           }
     }
 
+newtype ConfigFile = ConfigFile {config :: Config}
+
+data Config = Config
+  { ewwDefaultNotificationKey :: Maybe String
+  , ewwWindow :: Maybe EwwWindow
+  , maxNotifications :: Word32
+  , notificationOrientation :: Orientation
+  , timeout :: Timeout
+  }
+  deriving (Eq, Show)
+
 type EwwWindow = String
 
 data Orientation = Horizontal | Vertical
@@ -53,14 +64,8 @@ data TimeoutByUrgency = TimeoutByUrgency
   }
   deriving (Eq, Show)
 
-data Config = Config
-  { ewwDefaultNotificationKey :: Maybe String
-  , ewwWindow :: Maybe EwwWindow
-  , maxNotifications :: Word32
-  , notificationOrientation :: Orientation
-  , timeout :: Timeout
-  }
-  deriving (Eq, Show)
+instance FromValue ConfigFile where
+  fromValue = parseTableFromValue (ConfigFile <$> optKeyWithDefault "config" defaultConfig)
 
 instance FromValue Config where
   fromValue =
@@ -93,7 +98,7 @@ instance FromValue TimeoutByUrgency where
           <*> optKeyWithDefault "critical" criticalTimeout
       )
    where
-    dTimeout = defaultConfig // timeout // byUrgency 
+    dTimeout = defaultConfig // timeout // byUrgency
     lowTimeout = low dTimeout
     normalTimeout = normal dTimeout
     criticalTimeout = critical dTimeout
@@ -120,13 +125,13 @@ importConfig =
     if exists
       then do
         configStr <- readFile configFile
-        let config = decode configStr :: Result String Config
+        let parsedFile = decode configStr :: Result String ConfigFile
 
-        case config of
+        case parsedFile of
           Success w cfg ->
             do
               unless (null w) (prettyPrintParserWarning w)
-              return $ Just cfg
+              return $ Just (config cfg)
           Failure e -> do
             prettyPrintParserError e
             return Nothing
