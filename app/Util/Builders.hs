@@ -6,6 +6,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Text (Text, unpack)
 import Data.Word (Word32)
+
 import State
 import Util.Helpers (groupTuples)
 
@@ -19,8 +20,8 @@ buildWindowCloseCommand :: String -> String
 buildWindowCloseCommand w = "eww close " ++ w
 
 buildWidgetWrapper :: Bool -> String -> String
-buildWidgetWrapper True widgets = "(box :orientation \"vertical\" " ++ widgets ++ ")"
-buildWidgetWrapper False widgets = "(box :orientation \"horizontal\" " ++ widgets ++ ")"
+buildWidgetWrapper True widgets = "(box :space-evenly false :orientation \"vertical\" " ++ widgets ++ ")"
+buildWidgetWrapper False widgets = "(box :space-evenly false :orientation \"horizontal\" " ++ widgets ++ ")"
 
 buildWidgetString :: [Notification] -> String
 buildWidgetString =
