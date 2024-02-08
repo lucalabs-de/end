@@ -6,6 +6,9 @@ import Data.Text
 import Data.Time.Clock.System (SystemTime (systemSeconds))
 import Data.Word (Word32)
 import DBus.Client (Client)
+import Util.DbusNotify (Hints)
+
+type NState = MVar NotificationState
 
 data Notification = Notification
   { nId :: Word32
@@ -16,8 +19,8 @@ data Notification = Notification
   , appIcon :: Text
   , summary :: Text
   , body :: Text
-  , hintString :: String
-  , actionString :: String
+  , hints :: Hints
+  , actions :: [Text]
   , widget :: Maybe String
   }
   deriving (Show, Eq)
@@ -28,8 +31,6 @@ data NotificationState = NotificationState
   , idCounter :: Word32
   , client :: Client
   }
-
-type NState = MVar NotificationState
 
 data Lifetime = Timeout Word32 | Persistent Word32
   deriving (Show, Eq)

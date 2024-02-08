@@ -23,24 +23,31 @@ import Toml.FromValue (
 defaultConfig :: Config
 defaultConfig =
   Config
-    { settings =
-        Settings
-          { ewwDefaultNotificationKey = Nothing
-          , ewwWindow = Nothing
-          , maxNotifications = 0
-          , notificationOrientation = Vertical
-          , timeout =
-              Timeout
-                { byUrgency =
-                    TimeoutByUrgency
-                      { low = 5
-                      , normal = 10
-                      , critical = 0
-                      }
+    { ewwDefaultNotificationKey = Nothing
+    , ewwWindow = Nothing
+    , maxNotifications = 0
+    , notificationOrientation = Vertical
+    , timeout =
+        Timeout
+          { byUrgency =
+              TimeoutByUrgency
+                { low = 5
+                , normal = 10
+                , critical = 0
                 }
           }
-    , customNotifications = []
     }
+
+newtype ConfigFile = ConfigFile {config :: Config}
+
+data Config = Config
+  { ewwDefaultNotificationKey :: Maybe String
+  , ewwWindow :: Maybe EwwWindow
+  , maxNotifications :: Word32
+  , notificationOrientation :: Orientation
+  , timeout :: Timeout
+  }
+  deriving (Eq, Show)
 
 type EwwWindow = String
 
@@ -57,70 +64,26 @@ data TimeoutByUrgency = TimeoutByUrgency
   }
   deriving (Eq, Show)
 
-data CustomNotification = CustomNotification
-  { name :: String
-  , ewwKey :: String
-  , hint :: String
-  , customTimeout :: Word32
-  }
-  deriving (Eq, Show)
-
-data Settings = Settings
-  { ewwDefaultNotificationKey :: Maybe String
-  , ewwWindow :: Maybe EwwWindow
-  , maxNotifications :: Word32
-  , notificationOrientation :: Orientation
-  , timeout :: Timeout
-  }
-  deriving (Eq, Show)
-
-data Config = Config
-  { settings :: Settings
-  , customNotifications :: [CustomNotification]
-  }
-  deriving (Eq, Show)
+instance FromValue ConfigFile where
+  fromValue = parseTableFromValue (ConfigFile <$> optKeyWithDefault "config" defaultConfig)
 
 instance FromValue Config where
   fromValue =
     parseTableFromValue
       ( Config
-          <$> optKeyWithDefault
-            "config"
-            (settings defaultConfig)
-          <*> optKeyWithDefault
-            "notification-type"
-            (customNotifications defaultConfig)
-      )
-
-instance FromValue Settings where
-  fromValue =
-    parseTableFromValue
-      ( Settings
           <$> optKey "eww-default-notification-key"
           <*> optKey "eww-window"
           <*> optKeyWithDefault
             "max-notifications"
-            (maxNotifications defaultSettings)
+            (maxNotifications defaultConfig)
           <*> ( \case
                   Just "v" -> Vertical
                   Just "h" -> Horizontal
-                  Nothing -> notificationOrientation defaultSettings
-                  _ -> Vertical
+                  Nothing -> notificationOrientation defaultConfig
+                  _invalidValue -> notificationOrientation defaultConfig
                   <$> optKey "notification-orientation"
               )
-          <*> optKeyWithDefault "timeout" (timeout defaultSettings)
-      )
-   where
-    defaultSettings = settings defaultConfig
-
-instance FromValue CustomNotification where
-  fromValue =
-    parseTableFromValue
-      ( CustomNotification
-          <$> reqKey "name"
-          <*> reqKey "eww-key"
-          <*> reqKey "hint"
-          <*> optKeyWithDefault "timeout" 0
+          <*> optKeyWithDefault "timeout" (timeout defaultConfig)
       )
 
 instance FromValue Timeout where
@@ -135,12 +98,12 @@ instance FromValue TimeoutByUrgency where
           <*> optKeyWithDefault "critical" criticalTimeout
       )
    where
-    dTimeout = byUrgency . timeout . settings $ defaultConfig
+    dTimeout = defaultConfig // timeout // byUrgency
     lowTimeout = low dTimeout
     normalTimeout = normal dTimeout
     criticalTimeout = critical dTimeout
 
-optKeyWithDefault :: FromValue a => String -> a -> ParseTable a
+optKeyWithDefault :: (FromValue a) => String -> a -> ParseTable a
 optKeyWithDefault k v = fromMaybe v <$> optKey k
 
 prettyPrintParserOutput :: [String] -> IO ()
@@ -162,17 +125,17 @@ importConfig =
     if exists
       then do
         configStr <- readFile configFile
-        let config = decode configStr :: Result String Config
+        let parsedFile = decode configStr :: Result String ConfigFile
 
-        case config of
+        case parsedFile of
           Success w cfg ->
             do
               unless (null w) (prettyPrintParserWarning w)
-              return $ Just cfg
+              return $ Just (config cfg)
           Failure e -> do
             prettyPrintParserError e
             return Nothing
-      else do 
+      else do
         putStrLn $ "could not find config file! should be at " ++ configFile
         return Nothing
 

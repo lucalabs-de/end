@@ -5,6 +5,8 @@ import Control.Monad (void)
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT))
 import Data.Bifunctor (second)
 import Data.List (minimumBy)
+import Data.Aeson.Types (Pair, Object, Value (Object), object)
+import Data.Aeson.KeyMap (empty)
 
 data Permit = Permit
 type Barrier = MVar Permit
@@ -52,3 +54,13 @@ groupTuples :: [a] -> [(a, a)]
 groupTuples [] = []
 groupTuples [_] = []
 groupTuples (k : v : t) = (k, v) : groupTuples t
+
+-- Aeson Helpers
+
+-- who thought it would be a good idea for Aeson.object to return a value
+-- instead of an Object???
+asAesonObject :: [Pair] -> Object
+asAesonObject p = toObject $ object p
+  where toObject (Object obj) = obj
+        toObject _ = empty
+  

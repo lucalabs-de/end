@@ -11,6 +11,7 @@ import Data.Text
 import Data.Word (Word32, Word8)
 
 type Hints = Map.Map Text Variant
+
 type ImageData = (Int32, Int32, Int32, Bool, Int32, Int32, Array)
 
 hintKeyNotifyType, hintKeyUrgency :: Text

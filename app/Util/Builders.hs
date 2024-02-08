@@ -1,13 +1,29 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Util.Builders where
 
-import DBus.Internal.Types
-import qualified Data.List as List
-import Data.Map (Map)
+import Data.Aeson (Array, Object, ToJSON (..))
+import qualified Data.Aeson as Aeson
+import Data.Aeson.Key (fromText)
+import qualified Data.Aeson.KeyMap as Object
+import Data.Aeson.Text (encodeToLazyText)
+import Data.Aeson.Types (Value (..), (.=))
+
+import DBus (Variant)
+import DBus.Internal.Types (
+  Atom (..),
+  Value (ValueAtom, ValueVariant),
+  Variant (..),
+ )
 import qualified Data.Map as Map
 import Data.Text (Text, unpack)
-import Data.Word (Word32)
+import qualified Data.Text.Lazy as LT
+
+import Data.Vector (fromList)
 import State
-import Util.Helpers (groupTuples)
+import Text.Printf (printf)
+import Util.DbusNotify (Hints)
+import Util.Helpers (asAesonObject, groupTuples)
 
 setEwwValue :: String -> String -> String
 setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
@@ -19,73 +35,69 @@ buildWindowCloseCommand :: String -> String
 buildWindowCloseCommand w = "eww close " ++ w
 
 buildWidgetWrapper :: Bool -> String -> String
-buildWidgetWrapper True widgets = "(box :orientation \"vertical\" " ++ widgets ++ ")"
-buildWidgetWrapper False widgets = "(box :orientation \"horizontal\" " ++ widgets ++ ")"
+buildWidgetWrapper True widgets = "(box :space-evenly false :orientation \"vertical\" " ++ widgets ++ ")"
+buildWidgetWrapper False widgets = "(box :space-evenly false :orientation \"horizontal\" " ++ widgets ++ ")"
 
 buildWidgetString :: [Notification] -> String
 buildWidgetString =
-  foldr
-    ( \n s ->
-        s
-          ++ buildEwwNotification
-            (widget n)
-            (nId n)
-            (appName n)
-            (appIcon n)
-            (summary n)
-            (body n)
-            (hintString n)
-            (actionString n)
-    )
-    ""
-
-buildHintString :: Map Text Variant -> String
-buildHintString = buildJsonString
-
-buildJsonString :: Map Text Variant -> String
-buildJsonString pairs =
-  "["
-    ++ List.intercalate ", " (Map.foldrWithKey (\k v s -> s ++ showEntry k v) [] pairs)
-    ++ "]"
+  foldr (\n s -> s ++ notificationString n) ""
  where
-  showEntry k v = ["{ key: \\\"" ++ unpack k ++ "\\\", value: \\\"" ++ show v ++ "\\\" }"]
-  show (Variant (ValueAtom (AtomText x))) = unpack x
-  show (Variant x) = showValue True x
+  notificationString n =
+    buildEwwNotification
+      (widget n)
+      ( asAesonObject
+          [ "id" .= nId n
+          , "application" .= appName n
+          , "icon" .= appIcon n
+          , "summary" .= summary n
+          , "body" .= body n
+          , "hints" .= buildHintObject (hints n)
+          , "actions" .= buildActionArray (actions n)
+          ]
+      )
 
-buildActionString :: [Text] -> String
-buildActionString list = buildJsonString actions
- where
-  actions = Map.map toVariant (Map.fromList (groupTuples list))
+buildHintObject :: Hints -> Object
+buildHintObject =
+  Map.foldrWithKey (\k v a -> Object.insert (fromText k) (fromVariant v) a) Object.empty
+
+buildActionArray :: [Text] -> Array
+buildActionArray =
+  fromList . map (\(k, v) -> Aeson.object ["key" .= k, "name" .= v]) . groupTuples
 
 buildEwwNotification ::
-  Maybe String ->
-  Word32 ->
-  Text ->
-  Text ->
-  Text ->
-  Text ->
-  String ->
-  String ->
+  Maybe String -> -- notification widget
+  Object -> -- notification data
   String
-buildEwwNotification Nothing _ _ _ summary _ _ _ =
-  "(label :text \""
-    ++ unpack summary
-    ++ "\" :xalign 1 :halign \"end\" :css \"label { padding-right: 12px; padding-top: 6px }\")"
-buildEwwNotification (Just widgetName) nId appName appIcon summary body hints actions =
-  "("
-    ++ widgetName
-    ++ " :end-id \""
-    ++ show nId
-    ++ "\" :end-appname \""
-    ++ unpack appName
-    ++ "\" :end-appicon \""
-    ++ unpack appIcon
-    ++ "\" :end-summary \""
-    ++ unpack summary
-    ++ "\" :end-body \""
-    ++ unpack body
-    ++ "\" :end-hints \""
-    ++ hints
-    ++ "\" :end-actions \""
-    ++ actions
-    ++ "\")"
+buildEwwNotification Nothing notificationData =
+  let
+    summary = case Object.lookup "summary" notificationData of
+      Just (String t) -> unpack t
+      _noSummary -> ""
+   in
+    printf
+      "(label :text \"%s\" :xalign 1 :halign \"end\" :css \"label { padding-right: 12px; padding-top: 6px }\")"
+      summary
+buildEwwNotification (Just widgetName) notificationData =
+  printf
+    "(%s :notification %s)"
+    widgetName
+    (show $ LT.unpack $ encodeToLazyText notificationData)
+
+-- REMARK: Doesn't support all variant types yet, but should be sufficient for
+-- hints and actions
+fromVariant :: Variant -> Aeson.Value
+fromVariant (Variant (ValueVariant v)) = fromVariant v
+fromVariant (Variant (ValueAtom a)) = atomToJson a
+ where
+  atomToJson a = case a of
+    AtomBool b -> Bool b
+    AtomText t -> String t
+    AtomInt16 i -> toJSON i
+    AtomInt32 i -> toJSON i
+    AtomInt64 i -> toJSON i
+    AtomWord8 i -> toJSON i
+    AtomWord32 i -> toJSON i
+    AtomWord64 i -> toJSON i
+    AtomDouble d -> toJSON d
+    _notSupported -> Null
+fromVariant _notSupported = Null

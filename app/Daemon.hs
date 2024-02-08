@@ -52,19 +52,15 @@ import State
 import System.Process (callCommand)
 
 import Config (
-  Config (customNotifications, settings),
-  CustomNotification (customTimeout, ewwKey, hint, name),
   EwwWindow,
-  Settings (ewwDefaultNotificationKey, ewwWindow, maxNotifications, timeout),
   Timeout (byUrgency),
   importConfig,
-  (//),
+  (//), Config (..),
  )
 import Data.Maybe (fromJust, fromMaybe, isJust)
 import System.Directory.Internal.Prelude (exitFailure)
 
 import Data.Bifunctor (second)
-import Data.List (find)
 import Data.Time.Clock.System (SystemTime (systemSeconds), getSystemTime)
 
 import Util.Builders
@@ -134,7 +130,7 @@ closeNotification state id = do
   s <- readMVar state
   let cfg = config s
 
-  let window = cfg // settings // ewwWindow
+  let window = cfg // ewwWindow
   removeNotification state window id
 
 -- Implements org.freedesktop.Notifications.Notify
@@ -149,14 +145,11 @@ notify ::
   Hints -> -- hints
   Int32 -> -- timeout (not supported)
   IO Word32
-notify state appName replaceId appIcon summary body actions hints timeout = do
+notify state appName replaceId appIcon summary body actions hints _ = do
   s <- readMVar state
   let cfg = config s
 
-  let customType = do
-        customHint <- getStringHint hints hintKeyNotifyType
-        find (\s -> hint s == customHint) (customNotifications cfg)
-
+  -- parse any possible binary image data
   maybeFixedHints <- runMaybeT $ do
     imageData <- liftMaybe $ getImageDataHint hints "image-data"
     imageName <- lift $ show . systemSeconds <$> getSystemTime
@@ -164,28 +157,7 @@ notify state appName replaceId appIcon summary body actions hints timeout = do
     return $ Map.insert "image-path" imagePath $ Map.delete "image-data" hints
 
   let sanitizedHints = fromMaybe hints maybeFixedHints
-
-  let notifyFunction = maybe notifyDefault notifyCustom customType
-  notifyFunction state appName replaceId appIcon summary body actions sanitizedHints timeout
-
-notifyDefault ::
-  NState ->
-  Text -> -- application name
-  Word32 -> -- replaces id
-  Text -> -- app icon
-  Text -> -- summary
-  Text -> -- body
-  [Text] -> -- actions
-  Hints -> -- hints
-  Int32 -> -- timeout
-  IO Word32
-notifyDefault state appName replaceId appIcon summary body actions hints _ = do
-  notificationState <- readMVar state
-  let cfg = config notificationState
-
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
-  let hintString = buildHintString hints
-  let actionString = buildActionString actions
 
   timestamp <- getSystemTime
   notificationId <-
@@ -196,55 +168,16 @@ notifyDefault state appName replaceId appIcon summary body actions hints _ = do
   let notification =
         Notification
           { nId = notificationId
-          , nTimeout = cfg // settings // timeout // byUrgency // currentUrgency
+          , nTimeout = cfg // timeout // byUrgency // currentUrgency
           , nTimestamp = timestamp
           , notifyType = Nothing
           , appName = appName
           , appIcon = appIcon
           , summary = summary
           , body = body
-          , hintString = hintString
-          , actionString = actionString
-          , widget = cfg // settings // ewwDefaultNotificationKey
-          }
-
-  handleNewNotification state notification
-
-notifyCustom ::
-  CustomNotification ->
-  NState ->
-  Text ->
-  Word32 ->
-  Text ->
-  Text ->
-  Text ->
-  [Text] ->
-  Hints ->
-  Int32 ->
-  IO Word32
-notifyCustom custom state appName replaceId appIcon summary body actions hints _ = do
-  timestamp <- getSystemTime
-  notificationId <-
-    if replaceId /= 0
-      then return replaceId
-      else nextId state
-
-  let hintString = buildHintString (Map.delete "image-data" hints) -- TODO: Handle images
-  let actionString = buildActionString actions
-
-  let notification =
-        Notification
-          { nId = notificationId
-          , nTimeout = customTimeout custom
-          , nTimestamp = timestamp
-          , notifyType = Just (name custom)
-          , appName = appName
-          , appIcon = appIcon
-          , summary = summary
-          , body = body
-          , hintString = hintString
-          , actionString = actionString
-          , widget = Just (ewwKey custom)
+          , hints = sanitizedHints
+          , actions = actions
+          , widget = cfg // ewwDefaultNotificationKey
           }
 
   handleNewNotification state notification
@@ -254,8 +187,8 @@ handleNewNotification state notification = do
   notificationState <- readMVar state
 
   let cfg = config notificationState
-  let window = cfg // settings // ewwWindow
-  let maxN = cfg // settings // maxNotifications
+  let window = cfg // ewwWindow
+  let maxN = cfg // maxNotifications
 
   let notifyTransform ns = do
         let (r, l) = tryReplace (\n -> nId n == nId notification) notification ns
@@ -312,7 +245,7 @@ evalCommand state _ "action" params = invokeAction state (read (head params)) (p
 evalCommand state _ "close" params = do
   s <- readMVar state
   let cfg = config s
-  removeNotification state (cfg // settings // ewwWindow) (read (head params))
+  removeNotification state (cfg // ewwWindow) (read (head params))
 evalCommand _ _ _ _ = return ()
 
 main :: IO ()

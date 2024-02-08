@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               EwwNotificationDaemon
-version:            1.2.0
+version:            2.0.0
 synopsis:           Linux Notification Daemon using Eww Widgets
 
 homepage:
@@ -40,6 +40,8 @@ executable end
       mtl,
       transformers,
       containers,
+      aeson,
+      vector,
       extensible-exceptions,
       bytestring,
       atomic-modify,
