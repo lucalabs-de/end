@@ -1,15 +1,24 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Util.Builders where
 
-import DBus.Internal.Types
-import qualified Data.List as List
-import Data.Map (Map)
+import DBus (Variant)
+import DBus.Internal.Types (Atom (..), Value (ValueAtom, ValueVariant), Variant (..))
 import Data.Aeson (Array, Object)
+import qualified Data.Aeson as Aeson
+import Data.Aeson.Key (fromText)
+import qualified Data.Aeson.KeyMap as Object
+import Data.Aeson.Text (encodeToLazyText)
+import Data.Aeson.Types (Value (..), (.=))
 import qualified Data.Map as Map
 import Data.Text (Text, unpack)
-import Data.Word (Word32)
+import qualified Data.Text.Lazy as LT
 
+import Data.Vector (fromList)
 import State
-import Util.Helpers (groupTuples)
+import Text.Printf (printf)
+import Util.DbusNotify (Hints)
+import Util.Helpers (asAesonObject, groupTuples)
 
 setEwwValue :: String -> String -> String
 setEwwValue var val = "eww update " ++ var ++ "='" ++ val ++ "'"
@@ -26,38 +35,39 @@ buildWidgetWrapper False widgets = "(box :space-evenly false :orientation \"hori
 
 buildWidgetString :: [Notification] -> String
 buildWidgetString =
-  foldr
-    ( \n s ->
-        s
-          ++ buildEwwNotification
-            (widget n)
-            (nId n)
-            (appName n)
-            (appIcon n)
-            (summary n)
-            (body n)
-            (hintString n)
-            (actionString n)
-    )
-    ""
-
-buildHintString :: Map Text Variant -> String
-buildHintString = buildJsonString
-
-buildJsonString :: Map Text Variant -> String
-buildJsonString pairs =
-  "["
-    ++ List.intercalate ", " (Map.foldrWithKey (\k v s -> s ++ showEntry k v) [] pairs)
-    ++ "]"
+  foldr (\n s -> s ++ notificationString n) ""
  where
-  showEntry k v = ["{ key: \\\"" ++ unpack k ++ "\\\", value: \\\"" ++ show v ++ "\\\" }"]
-  show (Variant (ValueAtom (AtomText x))) = unpack x
-  show (Variant x) = showValue True x
+  notificationString n =
+    buildEwwNotification
+      (widget n)
+      ( asAesonObject
+          [ "id" .= nId n
+          , "application" .= appName n
+          , "icon" .= appIcon n
+          , "summary" .= summary n
+          , "body" .= body n
+          , "hints" .= buildHintObject (hints n)
+          , "actions" .= buildActionArray (actions n)
+          ]
+      )
 
-buildActionString :: [Text] -> String
-buildActionString list = buildJsonString actions
- where
-  actions = Map.map toVariant (Map.fromList (groupTuples list))
+buildHintObject :: Hints -> Object
+buildHintObject = Map.foldrWithKey (\k v a -> Object.insert (fromText k) (fromVariant v) a) Object.empty
+
+buildActionArray :: [Text] -> Array
+buildActionArray = fromList . map (\(k, v) -> Aeson.object ["key" .= k, "name" .= v]) . groupTuples
+
+-- REMARK: Doesn't support all variant types yet, but should be sufficient for
+-- hints and actions
+fromVariant :: Variant -> Aeson.Value
+fromVariant (Variant (ValueVariant v)) = fromVariant v
+fromVariant (Variant (ValueAtom (AtomBool b))) = Bool b
+fromVariant (Variant (ValueAtom (AtomText t))) = String t
+fromVariant (Variant (ValueAtom (AtomInt32 i))) = Aeson.toJSON i
+fromVariant (Variant (ValueAtom (AtomWord8 i))) = Aeson.toJSON i
+fromVariant (Variant (ValueAtom (AtomWord32 i))) = Aeson.toJSON i
+fromVariant (Variant (ValueAtom (AtomDouble d))) = Aeson.toJSON d
+fromVariant _notSupported = Null
 
 buildEwwNotification ::
   Maybe String -> -- notification widget

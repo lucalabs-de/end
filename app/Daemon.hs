@@ -157,10 +157,7 @@ notify state appName replaceId appIcon summary body actions hints _ = do
     return $ Map.insert "image-path" imagePath $ Map.delete "image-data" hints
 
   let sanitizedHints = fromMaybe hints maybeFixedHints
-
   let currentUrgency = configKeyFromUrgency (getUrgency hints)
-  let hintString = buildHintString sanitizedHints
-  let actionString = buildActionString actions
 
   timestamp <- getSystemTime
   notificationId <-
@@ -178,8 +175,8 @@ notify state appName replaceId appIcon summary body actions hints _ = do
           , appIcon = appIcon
           , summary = summary
           , body = body
-          , hintString = hintString
-          , actionString = actionString
+          , hints = sanitizedHints
+          , actions = actions
           , widget = cfg // ewwDefaultNotificationKey
           }
 

@@ -40,6 +40,8 @@ executable end
       mtl,
       transformers,
       containers,
+      aeson,
+      vector,
       extensible-exceptions,
       bytestring,
       atomic-modify,

@@ -122,7 +122,7 @@ The notification data is supplied to the widget by the parameter `notification`,
     summary: <Summary>
     body: <Body>
     hints: {
-        "key": "value",
+        "<hint key>": <hint value>,
         ...
     },
     actions: [
