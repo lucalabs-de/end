@@ -102,7 +102,7 @@ removeAfterTimeout :: NState -> Maybe EwwWindow -> Word32 -> Word32 -> IO ()
 removeAfterTimeout state window id timeout = do
   threadDelay (fromIntegral timeout * 1000 * 1000)
   removeNotification state window id
-  emitNotificationClosed state id (toEnum 0)
+  emitNotificationClosed state id Expired
 
 removeNotification :: NState -> Maybe EwwWindow -> Word32 -> IO ()
 removeNotification state window id = do
@@ -149,7 +149,7 @@ closeNotification state id = do
 
   let window = cfg // ewwWindow
   removeNotification state window id
-  emitNotificationClosed state id (toEnum 2)
+  emitNotificationClosed state id CloseNotification
 
 -- Implements org.freedesktop.Notifications.Notify
 notify ::
@@ -265,7 +265,7 @@ evalCommand state _ "close" params = do
   let cfg = config s
   let id = (read (head params))
   removeNotification state (cfg // ewwWindow) id
-  emitNotificationClosed state id (toEnum 1)
+  emitNotificationClosed state id Dismiss
 evalCommand _ _ _ _ = return ()
 
 main :: IO ()
