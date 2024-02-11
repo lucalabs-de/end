@@ -35,6 +35,9 @@ data NotificationState = NotificationState
 data Lifetime = Timeout Word32 | Persistent Word32
   deriving (Show, Eq)
 
+data NotificationCloseReason = Expired | Dismiss | CloseNotification | Other
+  deriving (Enum)
+
 instance Ord Lifetime where
   (<=) (Timeout _) (Persistent _) = True
   (<=) (Timeout n) (Timeout m) = n Prelude.<= m

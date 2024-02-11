@@ -102,6 +102,7 @@ removeAfterTimeout :: NState -> Maybe EwwWindow -> Word32 -> Word32 -> IO ()
 removeAfterTimeout state window id timeout = do
   threadDelay (fromIntegral timeout * 1000 * 1000)
   removeNotification state window id
+  emitNotificationClosed state id (toEnum 0)
 
 removeNotification :: NState -> Maybe EwwWindow -> Word32 -> IO ()
 removeNotification state window id = do
@@ -124,6 +125,22 @@ invokeAction state id key = do
 
   emit (client s) signalWithBody
 
+-- Implements org.freedesktop.Notifications.NotificationClosed
+emitNotificationClosed :: NState -> Word32 -> NotificationCloseReason -> IO ()
+emitNotificationClosed state id reason = do
+  s <- readMVar state
+
+  let signalEmpty =
+        signal
+          "/org/freedesktop/Notifications"
+          "org.freedesktop.Notifications"
+          "NotificationClosed"
+  let reasonId = fromIntegral (fromEnum reason + 1) :: Word32
+
+  let signalWithBody = signalEmpty{signalBody = [toVariant id, toVariant reasonId]}
+
+  emit (client s) signalWithBody
+
 -- Implements org.freedesktop.Notifications.CloseNotification
 closeNotification :: NState -> Word32 -> IO ()
 closeNotification state id = do
@@ -132,6 +149,7 @@ closeNotification state id = do
 
   let window = cfg // ewwWindow
   removeNotification state window id
+  emitNotificationClosed state id (toEnum 2)
 
 -- Implements org.freedesktop.Notifications.Notify
 notify ::
@@ -245,7 +263,9 @@ evalCommand state _ "action" params = invokeAction state (read (head params)) (p
 evalCommand state _ "close" params = do
   s <- readMVar state
   let cfg = config s
-  removeNotification state (cfg // ewwWindow) (read (head params))
+  let id = (read (head params))
+  removeNotification state (cfg // ewwWindow) id
+  emitNotificationClosed state id (toEnum 1)
 evalCommand _ _ _ _ = return ()
 
 main :: IO ()
