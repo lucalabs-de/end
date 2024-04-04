@@ -1,0 +1,88 @@
+;; Notifications
+(defvar end-notifications '')
+
+(defwindow notification-frame
+ :monitor 0
+ :geometry (geometry 
+   :x "0px"
+   :y "0px"
+   :width "480px"
+   :height "0px"
+   :anchor "top right")
+ :stacking "fg"
+ :windowtype "dialog"
+ :passthrough true
+ :wm-ignore true
+ (literal :content end-notifications))
+
+(defwidget end-notification
+  [notification]
+  (literal :content {
+    notification.hints["type"] == "battery" 
+    ? '(battery-notification :notification notification)'
+    : '(base-notification :notification notification)' }))
+
+(defwidget base-notification
+  [notification]
+  (eventbox
+    :onclick "end close ${notification.id}" ; use the end close command to implement "click-to-dismiss"
+    :valign "start"
+    :height 100
+    (box
+      :class "end-default-notification-box"
+      :orientation "horizontal"
+      :space-evenly false
+      (image
+        :path {notification.hints["image-path"]} ; end sets this property if the notification contains an image
+        :image-width 100
+        :image-height 100
+      )
+      (box
+        :class "content-box"
+        :orientation "vertical"
+        :space-evenly "false"
+        (label 
+          :class "notification-text notification-title"
+          :valign "start"
+          :yalign 0
+          :xalign 0
+          :text {notification.summary})
+        (label
+          :class "notification-text notification-content"
+          :valign "start"
+          :yalign 0
+          :xalign 0
+          :vexpand true
+          :wrap true
+          :text {notification.body})))))
+
+(defwidget battery-notification
+  [notification]
+  (eventbox
+    :onclick "end close ${notification.id}" 
+    (box
+      :class "end-default-notification-box"
+      :orientation "horizontal"
+      :space-evenly false
+      (label
+        :class "notification-text battery-icon"
+        :yalign 0.5
+        :xalign 0.5
+        :text "󰁺"
+      )
+      (box
+        :orientation "vertical"
+        :hexpand true
+        (label 
+          :class "notification-text notification-title"
+          :hexpand true
+          :yalign 0.5
+          :xalign 0
+          :text "Low Battery")
+        (label
+          :class "notification-text"
+          :vexpand true
+          :hexpand true
+          :yalign 0.5
+          :xalign 0
+          :text "${EWW_BATTERY["BAT0"]["capacity"]}% remaining"))))) ; of course we can still use eww built-ins!

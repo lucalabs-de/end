@@ -1,0 +1,40 @@
+@import 'colors'
+
+$bgcolor: rgba(0, 0, 0, 0);
+
+* {
+  all: unset;
+}
+
+.end-default-notification-box {
+  background-color: $end-default-bg;
+  padding: 12px;
+  padding-left: 8px;
+  margin: 12px;
+  border-radius: 10px;
+}
+
+.notification-text {
+  color: $end-default-fg;
+  font-family: 'FantasqueSansM Nerd Font Mono';
+}
+
+.notification-title {
+  font-weight: bold;
+  font-size: 1em;
+}
+
+.notification-content {
+  font-size: .8em;
+}
+
+.content-box {
+  margin-left: 12px;
+}
+
+.battery-icon {
+  color: $red;
+  font-size: 2.1em;
+  margin-right: 48px;
+  margin-left: 24px;
+}
