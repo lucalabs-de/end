@@ -149,5 +149,5 @@ The Notification Specification defines two different ways of attaching images to
 
 
 #### Example Configuration 
-You can find a basic complete example configuration in [EXAMPLE.md](EXAMPLE.md)
+You can find a basic complete example configuration in the example folder.
 
