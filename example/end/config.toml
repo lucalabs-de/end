@@ -1,0 +1,9 @@
+[config]
+eww-window = "notification-frame"
+eww-default-notification-key = "end-notification"
+max-notifications = 10
+notification-orientation = "v"
+
+timeout.urgency.low = 5 
+timeout.urgency.normal = 10
+timeout.urgency.critical = 0
