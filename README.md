@@ -7,7 +7,7 @@ If you already use [eww](https://github.com/elkowar/eww) for your widgets, would
 The Eww Notification Daemon, or End for short, allows you to do exactly that. It leverages eww's `literal` widget to dynamically display 
 libnotify notifications. You define the eww widgets that are used to display a notification and the eww window that they will appear in. 
 
-![Basic Eww Notifications](.github/basic.png)
+![Example Eww Notifications](.github/screenshot.png)
 
 ## Getting Started
 You can either build the project yourself or use one of the prebuilt binaries under Releases.
