@@ -4,6 +4,4 @@ This folder contains an example config that implements a basic widget for genera
 
 ![Notification Example](../.github/screenshot.png)
 
-Images work as well!
-
 ![Notification with images](../.github/images.png)
